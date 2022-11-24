@@ -4,7 +4,7 @@
 	(:mix :fiveam)
 	(:import-from :abyss/context
 		:shift-context :resume-context :fresh-context :initial-context
-		:error-guard :final-guard :push-frame :normal-pass
+		:error-guard :final-guard :push-frame :normal-pass  :context-handler
 	)
 )
 (in-package :abyss/test/context)
@@ -20,7 +20,7 @@
 	(if effect
 		#'(lambda (ctx x)
 			(normal-pass
-				(resume-context ctx (car x) #'shift-handler)
+				(resume-context ctx (car x))
 				(cdr x)
 			)
 		)
@@ -104,5 +104,3 @@
 		)
 	)
 )
-
-

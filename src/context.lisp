@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/context
 	(:use :cl)
 	(:export :shift-context :resume-context :fresh-context :initial-context
-		:error-guard :final-guard :push-frame :normal-pass
+		:error-guard :final-guard :push-frame :normal-pass :context-handler
 	)
 )
 (in-package :abyss/context)
@@ -68,7 +68,6 @@
 (defun discard-context (child)
 	"Discards a child context, unwinds all guards."
 	#'(lambda (parent x)
-		(print "discard")
 		(if (ctx-guards child)
 			; if child has guards, the pending chain is cyclic
 			; even if pending points directly back to child
@@ -135,12 +134,8 @@
 	)
 )
 
-(defun resume-context (current target handler)
-	"Resumes the suspended context. Sets target's handler."
-	; supports shallow handlers.
-	; the only time handler needs to be set is on resume
-	; hence no separate function to set it
-	(setf (ctx-handler target) handler)
+(defun resume-context (current target)
+	"Resumes the suspended context."
 	; returning the resumed context allows for bidirectional effects
 	(shiftf (ctx-pending target) current)
 )
@@ -198,4 +193,10 @@
 (defun normal-pass (ctx x)
 	"Pops and calls the closure of the top of the frames stack."
 	(funcall (vector-pop (ctx-frames ctx)) ctx x)
+)
+
+(defun context-handler (ctx handler)
+	"Sets the handler of a context."
+	; supports shallow effect handlers
+	(setf (ctx-handler ctx) handler)
 )
