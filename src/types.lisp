@@ -18,8 +18,9 @@
 (uiop:define-package :abyss/types
 	(:use :cl)
 	(:export :*inert* :*ignore* :*true* :*false*
-		:boole-type-p :inert-p :ignore-p :applicative-p
-		:make-app :app-combiner
+		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
+		:make-app :app-combiner :make-effect
+		:*eff-bad-continuation* :*eff-invalid-comb* :*eff-sym-not-found*
 	)
 )
 (in-package :abyss/types)
@@ -35,6 +36,7 @@
 		:read-only t
 	)
 )
+(defstruct effect)
 
 (defvar *inert* (make-literal-type))
 (defvar *ignore* (make-literal-type))
@@ -44,3 +46,7 @@
 (defun inert-p (x) (eq *inert* x))
 
 (defun ignore-p (x) (eq *ignore* x))
+
+(defvar *eff-bad-continuation* (make-effect))
+(defvar *eff-invalid-comb* (make-effect))
+(defvar *eff-sym-not-found* (make-effect))
