@@ -12,6 +12,7 @@
 		(:file "context")
 		(:file "environment")
 		(:file "continuation")
+		(:file "evaluate")
 	)
 	:author "James Adam Armstrong"
 	;:maintainer ""
@@ -35,6 +36,7 @@
 		(:file "context")
 		(:file "environment")
 		(:file "continuation")
+		(:file "evaluate")
 	)
 	:perform (test-op (o c) (symbol-call :fiveam :run!
 		(find-symbol* :abyss-tests :abyss/test))
