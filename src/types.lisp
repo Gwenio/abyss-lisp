@@ -21,6 +21,7 @@
 		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
 		:make-app :app-combiner :make-effect
 		:*eff-bad-continuation* :*eff-invalid-comb* :*eff-sym-not-found*
+		:*eff-improper-list*
 	)
 )
 (in-package :abyss/types)
@@ -50,3 +51,4 @@
 (defvar *eff-bad-continuation* (make-effect))
 (defvar *eff-invalid-comb* (make-effect))
 (defvar *eff-sym-not-found* (make-effect))
+(defvar *eff-improper-list* (make-effect))
