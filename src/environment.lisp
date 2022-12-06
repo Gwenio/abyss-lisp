@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/environment
 	(:use :cl)
 	(:export :make-environment :environment-p :env-table :env-lookup
-		:env-key-not-found
+		:env-key-not-found :base-env-child :extend-base-env
 	)
 )
 (in-package :abyss/environment)
@@ -51,5 +51,24 @@
 				)
 			)
 		)
+	)
+)
+
+(defvar *base-env* (make-environment nil)
+	"An environment containing to core built-ins."
+)
+
+(defun base-env-child ()
+	"Returns a new child of `*base-env*`."
+	(make-environment *base-env*)
+)
+
+(defun extend-base-env (&rest body)
+	"Adds definitions to `*base-env*`. Expects an `alist` with `keyword` keys."
+	(loop for x in body
+		with table = (env-table *base-env*)
+		for key = (car x)
+		for val = (cadr x)
+		do (setf (gethash key table) val)
 	)
 )
