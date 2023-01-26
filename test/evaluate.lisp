@@ -70,6 +70,15 @@
 				(list #'normal-pass :x)
 				env))
 		)
+		(is (equalp (list env :x)
+			(evaluate
+				(initial-context #'root-handler)
+				(list (list #'(lambda (ctx _)
+						(declare (ignore _))
+						(normal-pass ctx #'normal-pass)
+					)) :x)
+				env))
+		)
 	)
 )
 
