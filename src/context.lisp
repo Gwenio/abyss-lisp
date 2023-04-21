@@ -1,7 +1,7 @@
 
 ; ISC License (ISC)
 ;
-; Copyright 2022 James Adam Armstrong
+; Copyright 2022-2023 James Adam Armstrong
 ;
 ; Permission to use, copy, modify, and/or distribute this software for any
 ; purpose with or without fee is hereby granted, provided that the above copyright
@@ -49,19 +49,14 @@
 	(guards)
 )
 
-(defun unwind-guards (stop)
+(defun unwind-guards (ctx x)
 	"Unwinds guards until `stop` is reached."
-	(labels (
-			(unwinder (ctx x)
-				(let ((guard (pop (ctx-guards ctx))))
-					(unless (eq stop (ctx-guards ctx))
-						(push-frame ctx #'unwinder)
-					)
-					(funcall guard ctx x)
-				)
-			)
+	(if (ctx-guards ctx)
+		(progn
+			(push-frame ctx #'unwind-guards)
+			(call-guard ctx x)
 		)
-		#'unwinder
+		(next-context ctx x)
 	)
 )
 
@@ -69,39 +64,16 @@
 	"Discards a child context, unwinds all guards."
 	#'(lambda (parent x)
 		(if (ctx-guards child)
-			; if child has guards, the pending chain is cyclic
-			; even if pending points directly back to child
-			; the last context in the chain will be child
-			(loop for current = (shiftf (ctx-pending child) nil)
-				then (ctx-pending current)
-				; append parent's guards to child's with mutation
-				;
-				; Note: it is expected that guard lists will be short unless
-				; an unwind is triggered while in the process of unwinding.
-				; Keeping guards scheduled for unwinding in a guard list
-				; while unwinding makes 'double unwinding' well defined
-				initially (when (ctx-guards parent)
-					(nconc (ctx-guards child) (ctx-guards parent))
-				)
-				while current
-				; set guards to `nil` so they are only scheduled once
-				; a context can come up both as part of a continuation chain
-				; and from its own `discard-context` in its parent's guards
-				;
-				; Just scheduling child's guards would be enough to ensure all
-				; guards that need to be called will get scheduled eventually
-				; However, it is more natural to expect unwinding to begin with
-				; the guards on the outermost suspended context
-				;
-				; IMPORTANT:
-				; the first guard should invalidate the continuation
-				; so that discarded contexts cannot be resumed by user code
-				nconc (shiftf (ctx-guards current) nil) into temp
-				finally (return
-					(funcall
-						; unwind till only original guards of `parent` remain
-						(unwind-guards (shiftf (ctx-guards parent) temp))
-						parent x)
+			; if child has guards, then `pending` points to a context to resume
+			; rather than the parent. Set back to parent so handlers are
+			; available.
+			(let ((leaf (shiftf (ctx-pending child) parent)))
+				(loop for current = (ctx-pending leaf)
+					then (ctx-pending current)
+					until (eq parent current)
+					do (push-frame current #'unwind-guards)
+					; start at leaf, so continuation is invalidated
+					finally (return (unwind-guards leaf x))
 				)
 			)
 			(normal-pass parent x)
@@ -111,7 +83,8 @@
 
 (defun next-context (ctx x)
 	"Placed as the final frame on a context to switch to the next."
-	(funcall (funcall (ctx-handler ctx) nil) (ctx-pending ctx) x))
+	(funcall (funcall (ctx-handler ctx) nil) (ctx-pending ctx) x)
+)
 
 (defun shift-context (ctx effect)
 	"Returns handler's result, the suspended context, and the resumed context."
@@ -130,7 +103,8 @@
 		; continuation
 		finally (return
 			(values found current
-				(shiftf (ctx-pending current) ctx)))
+				(shiftf (ctx-pending current) ctx))
+		)
 	)
 )
 
