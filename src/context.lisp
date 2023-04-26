@@ -26,7 +26,7 @@
 (defstruct
 	(context
 		(:conc-name ctx-)
-		(:constructor make-context (pending handler))
+		(:constructor make-context (pending))
 	)
 	"Interpreter evaluation context."
 	; `frames` represents a call stack.
@@ -45,50 +45,65 @@
 	; target context
 	; `nil` is passed for a 'normal' return
 	(handler)
-	; `guards` is a list of closures to call if the context is dicarded
+	; `guards` is a list of closures to call if the context is discarded
 	(guards)
 )
 
-(defun unwind-guards (ctx x)
+(defvar *current-ctx*)
+
+(defun unwind-guards (x)
 	"Unwinds guards until `stop` is reached."
-	(if (ctx-guards ctx)
+	(if (ctx-guards *current-ctx*)
 		(progn
-			(push-frame ctx #'unwind-guards)
-			(call-guard ctx x)
+			(push-frame #'unwind-guards)
+			(call-guard x)
 		)
-		(next-context ctx x)
+		(next-context x)
 	)
+)
+
+(defun unwind-handler (effect)
+	"Handler that initiates unwinding when the context resumes."
+	; Does not trigger for effects other than normal return.
+	; Normal return is indicated by `effect` being `nil`.
+	(if effect nil #'unwind-guards)
 )
 
 (defun discard-context (child)
 	"Discards a child context, unwinds all guards."
-	#'(lambda (parent x)
+	#'(lambda (x)
 		(if (ctx-guards child)
-			; if child has guards, then `pending` points to a context to resume
-			; rather than the parent. Set back to parent so handlers are
-			; available.
-			(let ((leaf (shiftf (ctx-pending child) parent)))
-				(loop for current = (ctx-pending leaf)
-					then (ctx-pending current)
-					until (eq parent current)
-					do (push-frame current #'unwind-guards)
-					; start at leaf, so continuation is invalidated
-					finally (return (unwind-guards leaf x))
+			(progn
+				; Set handler for unwinding. The setup for handling effects
+				; is not present if we are discarding.
+				(setf (ctx-handler child) #'unwind-handler)
+				; Ensure the pending context of child is parent.
+				(let ((parent *current-ctx*))
+					; intervening contexts should be discarded already
+					(setf (ctx-pending child) parent)
 				)
+				(setf *current-ctx* child)
+				(unwind-guards x)
 			)
-			(normal-pass parent x)
+			(normal-pass x)
 		)
 	)
 )
 
-(defun next-context (ctx x)
+(defun next-context (x)
 	"Placed as the final frame on a context to switch to the next."
-	(funcall (funcall (ctx-handler ctx) nil) (ctx-pending ctx) x)
+	(let* ((prev *current-ctx*) (next (ctx-pending prev)))
+		(setf *current-ctx* next)
+		(funcall (funcall (ctx-handler next) ()) x)
+	)
 )
 
-(defun shift-context (ctx effect)
+(defun shift-context (effect)
 	"Returns handler's result, the suspended context, and the resumed context."
-	(loop for current = ctx then (ctx-pending current)
+	(loop with original = *current-ctx*
+		with prev = original
+		for current = (ctx-pending prev)
+		then (progn (setf prev current) (ctx-pending current))
 		; the handler of the initial context will raise an error if reached
 		for found = (funcall (ctx-handler current) effect)
 		; the handler of the initial context is expected to raise an error
@@ -101,76 +116,79 @@
 		;
 		; a `final-guard` should be placed on `ctx` to invalidate the
 		; continuation
-		finally (return
-			(values found current
-				(shiftf (ctx-pending current) ctx))
+		finally (progn
+			(setf *current-ctx* current)
+			(setf (ctx-pending prev) original)
+			(return (values found prev))
 		)
 	)
 )
 
-(defun resume-context (current target)
+(defun resume-context (target)
 	"Resumes the suspended context."
 	; returning the resumed context allows for bidirectional effects
-	(shiftf (ctx-pending target) current)
+	(rotatef (ctx-pending target) *current-ctx*)
 )
 
-(defun fresh-context (ctx handler)
+(defun fresh-context (run handler)
 	"Creates a child context. Sets a `final-guard` to discard the child"
-	(let ((fresh (make-context ctx handler)))
-		(push-frame fresh #'next-context)
-		(final-guard ctx (discard-context fresh))
-		fresh
+	(let* ((ctx *current-ctx*) (fresh (make-context ctx)))
+		(final-guard (discard-context fresh))
+		(setf (ctx-handler ctx) handler)
+		(setf *current-ctx* fresh)
+		(push-frame #'next-context)
+		(funcall run)
 	)
 )
 
-(defun dummy (_ctx x)
-	(declare (ignore _ctx))
-	x
-)
-
-(defun initial-context (handler)
-	"Creates an initial context. `handler` is expected to raise an error."
-	(let ((fresh (make-context nil handler)))
-		(push-frame fresh #'dummy)
-		fresh
+(defun initial-context (run fallback)
+	"Creates an initial context. `fallback` is expected to raise an error."
+	(let ((*current-ctx* (make-context ())))
+		(push-frame #'identity)
+		(fresh-context run (lambda (effect)
+			(if effect
+				(funcall fallback effect)
+				#'normal-pass
+			)
+		))
 	)
 )
 
-(defun pop-guard (ctx x)
+(defun pop-guard (x)
 	"Pops the next guard on a context."
-	(pop (ctx-guards ctx))
-	(normal-pass ctx x)
+	(pop (ctx-guards *current-ctx*))
+	(normal-pass x)
 )
 
-(defun call-guard (ctx x)
+(defun call-guard (x)
 	"Pops the next guard on a context and calls it."
-	(funcall (pop (ctx-guards ctx)) ctx x)
+	(funcall (pop (ctx-guards *current-ctx*)) x)
 )
 
-(defun error-guard (ctx guard)
+(defun error-guard (guard)
 	"Push a guard that only runs only on unwind."
-	(push guard (ctx-guards ctx))
-	(push-frame ctx #'pop-guard)
+	(push guard (ctx-guards *current-ctx*))
+	(push-frame #'pop-guard)
 )
 
-(defun final-guard (ctx guard)
+(defun final-guard (guard)
 	"Push a guard that always runs."
-	(push guard (ctx-guards ctx))
-	(push-frame ctx #'call-guard)
+	(push guard (ctx-guards *current-ctx*))
+	(push-frame #'call-guard)
 )
 
-(defun push-frame (ctx fun)
+(defun push-frame (fun)
 	"Push a closure on the frames stack to be called by `normal-pass`."
-	(vector-push-extend fun (ctx-frames ctx))
+	(vector-push-extend fun (ctx-frames *current-ctx*))
 )
 
-(defun normal-pass (ctx x)
+(defun normal-pass (x)
 	"Pops and calls the closure of the top of the frames stack."
-	(funcall (vector-pop (ctx-frames ctx)) ctx x)
+	(funcall (vector-pop (ctx-frames *current-ctx*)) x)
 )
 
-(defun context-handler (ctx handler)
+(defun context-handler (handler)
 	"Sets the handler of a context."
 	; supports shallow effect handlers
-	(setf (ctx-handler ctx) handler)
+	(setf (ctx-handler *current-ctx*) handler)
 )

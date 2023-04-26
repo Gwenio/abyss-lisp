@@ -1,7 +1,7 @@
 
 ; ISC License (ISC)
 ;
-; Copyright 2022 James Adam Armstrong
+; Copyright 2022-2023 James Adam Armstrong
 ;
 ; Permission to use, copy, modify, and/or distribute this software for any
 ; purpose with or without fee is hereby granted, provided that the above copyright
@@ -37,58 +37,64 @@
 
 (defun invalidate-cont (cont)
 	"Used as a guard to invalidate a continuation."
-	#'(lambda (ctx x)
+	#'(lambda (x)
 		(setf (cont-ctx cont) nil)
-		(normal-pass ctx x)
+		(normal-pass x)
 	)
 )
 
-(defun perform-effect (ctx x eff)
+(defun perform-effect (x eff)
 	"Initiates effect handling."
-	(multiple-value-bind (h k next) (shift-context ctx eff)
-		(let ((cont (make-continuation k)))
-			(final-guard ctx (invalidate-cont cont))
-			(funcall h next (cons x cont))
+	(let ((cont (make-continuation ())))
+		(final-guard (invalidate-cont cont))
+		(multiple-value-bind (h k) (shift-context eff)
+			(setf (cont-ctx cont) k)
+			(funcall h (cons x cont))
 		)
 	)
 )
 
 ; bidirectional effect handling support
-(defun perform-effect/k (ctx x eff cont)
+(defun perform-effect/k (x eff cont)
 	"Initiates effect handling from a continuation, resusing `cont`."
 	(let ((suspended (cont-ctx cont)))
 		(if suspended
-			(let ((resumed (resume-context ctx suspended)))
-				(multiple-value-bind (h k next) (shift-context resumed eff)
+			(progn
+				(resume-context suspended)
+				(multiple-value-bind (h k) (shift-context eff)
 					(setf (cont-ctx cont) k)
-					(funcall h next (cons x cont))
+					(funcall h (cons x cont))
 				)
 			)
-			(perform-effect ctx cont *eff-bad-continuation*)
+			(perform-effect cont *eff-bad-continuation*)
 		)
 	)
 )
 
-(defun resume-cont (ctx x cont)
+(defun resume-cont (x cont)
 	"Resumes a continuation if it is valid."
 	(let ((suspended (cont-ctx cont)))
 		(if suspended
-			(normal-pass (resume-context ctx suspended) x)
-			(perform-effect ctx cont *eff-bad-continuation*)
+			(progn
+				(resume-context suspended)
+				(normal-pass x)
+			)
+			(perform-effect cont *eff-bad-continuation*)
 		)
 	)
 )
 
 ; shallow handler support
-(defun resume-cont/h (ctx x cont handler)
+(defun resume-cont/h (x cont handler)
 	"Like `resume-cont`, but also sets a new handler."
 	(let ((suspended (cont-ctx cont)))
 		(if suspended
 			(progn
-				(context-handler suspended handler)
-				(normal-pass (resume-context ctx suspended) x)
+				(context-handler handler)
+				(resume-context suspended)
+				(normal-pass x)
 			)
-			(perform-effect ctx cont *eff-bad-continuation*)
+			(perform-effect cont *eff-bad-continuation*)
 		)
 	)
 )

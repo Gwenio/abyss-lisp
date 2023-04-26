@@ -30,28 +30,29 @@
 	)
 )
 
+(defmacro run-eval-case (x env)
+	`(initial-context
+		(lambda () (evaluate ,x ,env))
+		#'root-handler)
+
+)
+
 (test eval-identity
 	(let ((empty (make-environment nil)))
-		(is (null
-			(evaluate (initial-context #'root-handler) nil empty)))
-		(is (eql 0
-			(evaluate (initial-context #'root-handler) 0 empty)))
-		(is (equal "test"
-			(evaluate (initial-context #'root-handler) "test" empty)))
-		(is (eq empty
-			(evaluate (initial-context #'root-handler) empty empty)))
-		(is (functionp
-			(evaluate (initial-context #'root-handler) #'identity empty)))
+		(is (null (run-eval-case nil empty)))
+		(is (eql 0 (run-eval-case 0 empty)))
+		(is (equal "test" (run-eval-case "test" empty)))
+		(is (eq empty (run-eval-case empty empty)))
+		(is (functionp (run-eval-case #'identity empty)))
 	)
 )
 
 (test eval-lookup
 	(let ((env (make-environment nil)))
 		(setf (gethash :x (env-table env)) nil)
-		(is (null
-			(evaluate (initial-context #'root-handler) :x env)))
+		(is (null (run-eval-case :x env)))
 		(signals sym-not-found
-			(evaluate (initial-context #'root-handler) :fake env))
+			(run-eval-case :fake env))
 	)
 )
 
@@ -59,26 +60,19 @@
 	(let ((env (make-environment nil)))
 		(setf (gethash :x (env-table env)) nil)
 		(is (equalp (list env)
-			(evaluate
-				(initial-context #'root-handler)
-				(list #'normal-pass)
-				env))
-		)
+			(run-eval-case (list #'normal-pass) env)
+		))
 		(is (equalp (list env :x)
-			(evaluate
-				(initial-context #'root-handler)
-				(list #'normal-pass :x)
-				env))
-		)
+			(run-eval-case (list #'normal-pass :x) env)
+		))
 		(is (equalp (list env :x)
-			(evaluate
-				(initial-context #'root-handler)
-				(list (list #'(lambda (ctx _)
-						(declare (ignore _))
-						(normal-pass ctx #'normal-pass)
-					)) :x)
-				env))
-		)
+			(run-eval-case
+				(list (list #'(lambda (_)
+					(declare (ignore _))
+					(normal-pass #'normal-pass)
+				)) :x)
+				env)
+		))
 	)
 )
 
@@ -89,47 +83,26 @@
 		)
 		(setf (gethash :x (env-table env)) nil)
 		(is (equalp (list env)
-			(evaluate
-				(initial-context #'root-handler)
-				(list dummy)
-				env)))
+			(run-eval-case (list dummy) env)))
 		(is (equalp (list env nil)
-			(evaluate
-				(initial-context #'root-handler)
-				(list dummy nil)
-				env)))
+			(run-eval-case (list dummy nil) env)))
 		(is (equalp (list env nil 0)
-			(evaluate
-				(initial-context #'root-handler)
-				(list dummy nil 0)
-				env)))
+			(run-eval-case (list dummy nil 0) env)))
 		(setf (gethash :f (env-table env)) dummy)
 		(is (equalp (list env nil 0)
-			(evaluate
-				(initial-context #'root-handler)
-				(list :f nil 0)
-				env)))
+			(run-eval-case (list :f nil 0) env)))
 		(setf (gethash :y (env-table env)) :x)
 		(is (equalp (list* env nil 0 :x)
-			(evaluate
-				(initial-context #'root-handler)
-				(list* dummy :x 0 :y)
-				env)))
+			(run-eval-case  (list* dummy :x 0 :y) env)))
 		(is (equalp (list* env nil 0 nil)
-			(evaluate
-				(initial-context #'root-handler)
-				(list* (make-app dummy) :y 0 :y)
-				env)))
+			(run-eval-case (list* (make-app dummy) :y 0 :y) env)))
 	)
 )
 
 (test eval-invalid-comb
 	(let ((empty (make-environment nil)))
 		(signals invalid-combiner
-			(evaluate
-				(initial-context #'root-handler)
-				(cons nil nil)
-				empty)
+			(run-eval-case (cons nil nil) empty)
 		)
 	)
 )
