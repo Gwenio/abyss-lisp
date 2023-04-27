@@ -18,7 +18,8 @@
 (uiop:define-package :abyss/context
 	(:use :cl)
 	(:export :shift-context :resume-context :fresh-context :initial-context
-		:error-guard :final-guard :push-frame :normal-pass :context-handler
+		:error-guard :final-guard :push-frame :normal-pass
+		:context-get-handler :context-set-handler
 	)
 )
 (in-package :abyss/context)
@@ -94,7 +95,9 @@
 	"Placed as the final frame on a context to switch to the next."
 	(let* ((prev *current-ctx*) (next (ctx-pending prev)))
 		(setf *current-ctx* next)
-		(funcall (funcall (ctx-handler next) ()) x)
+		(let ((ret (funcall (ctx-handler next) nil)))
+			(funcall (or ret #'normal-pass) x)
+		)
 	)
 )
 
@@ -187,8 +190,14 @@
 	(funcall (vector-pop (ctx-frames *current-ctx*)) x)
 )
 
-(defun context-handler (handler)
-	"Sets the handler of a context."
+(defun context-get-handler ()
+	"Gets the handler of the current context."
 	; supports shallow effect handlers
-	(setf (ctx-handler *current-ctx*) handler)
+	(ctx-handler *current-ctx*)
+)
+
+(defun context-set-handler (handler)
+	"Sets the handler of the current context, returning the previous."
+	; supports shallow effect handlers
+	(shiftf (ctx-handler *current-ctx*) handler)
 )
