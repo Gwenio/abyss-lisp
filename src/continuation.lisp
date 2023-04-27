@@ -20,7 +20,7 @@
 	(:import-from :abyss/types :*eff-bad-continuation*)
 	(:import-from :abyss/context
 		:shift-context :resume-context :final-guard :normal-pass
-		:context-get-handler :context-set-handler
+		:context-handler
 	)
 	(:export :perform-effect :perform-effect/k :resume-cont :resume-cont/h
 		:continuation-p
@@ -50,7 +50,7 @@
 		(final-guard (invalidate-cont cont))
 		(multiple-value-bind (h k) (shift-context eff)
 			(setf (cont-ctx cont) k)
-			(setf (cont-handler cont) (context-get-handler))
+			(setf (cont-handler cont) (context-handler))
 			(funcall h (cons x cont))
 		)
 	)
@@ -62,11 +62,11 @@
 	(let ((suspended (cont-ctx cont)))
 		(if suspended
 			(progn
-				(context-set-handler (cont-handler cont))
+				(context-handler (cont-handler cont))
 				(resume-context suspended)
 				(multiple-value-bind (h k) (shift-context eff)
 					(setf (cont-ctx cont) k)
-					(setf (cont-handler cont) (context-get-handler))
+					(setf (cont-handler cont) (context-handler))
 					(funcall h (cons x cont))
 				)
 			)
@@ -80,7 +80,7 @@
 	(let ((suspended (cont-ctx cont)))
 		(if suspended
 			(progn
-				(context-set-handler (cont-handler cont))
+				(context-handler (cont-handler cont))
 				(resume-context suspended)
 				(normal-pass x)
 			)
@@ -95,7 +95,7 @@
 	(let ((suspended (cont-ctx cont)))
 		(if suspended
 			(progn
-				(context-set-handler handler)
+				(context-handler handler)
 				(resume-context suspended)
 				(normal-pass x)
 			)

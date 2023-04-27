@@ -19,7 +19,7 @@
 	(:use :cl)
 	(:export :shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass
-		:context-get-handler :context-set-handler
+		:context-handler
 	)
 )
 (in-package :abyss/context)
@@ -45,7 +45,7 @@
 	; `handler` passed an effect and returns a function to call on the
 	; target context
 	; `nil` is passed for a 'normal' return
-	(handler)
+	(handler #'null-handler)
 	; `guards` is a list of closures to call if the context is discarded
 	(guards)
 )
@@ -63,11 +63,17 @@
 	)
 )
 
-(defun unwind-handler (effect)
-	"Handler that initiates unwinding when the context resumes."
-	; Does not trigger for effects other than normal return.
-	; Normal return is indicated by `effect` being `nil`.
-	(if effect nil #'unwind-guards)
+; (defun unwind-handler (effect)
+; 	"Handler that initiates unwinding when the context resumes."
+; 	; Does not trigger for effects other than normal return.
+; 	; Normal return is indicated by `effect` being `nil`.
+; 	(if effect nil #'unwind-guards)
+; )
+
+(defun null-handler (_effect)
+	"Handler that always returns nil."
+	(declare (ignore _effect))
+	nil
 )
 
 (defun discard-context (child)
@@ -77,7 +83,7 @@
 			(progn
 				; Set handler for unwinding. The setup for handling effects
 				; is not present if we are discarding.
-				(setf (ctx-handler child) #'unwind-handler)
+				(setf (ctx-handler child) #'null-handler)
 				; Ensure the pending context of child is parent.
 				(let ((parent *current-ctx*))
 					; intervening contexts should be discarded already
@@ -190,13 +196,7 @@
 	(funcall (vector-pop (ctx-frames *current-ctx*)) x)
 )
 
-(defun context-get-handler ()
-	"Gets the handler of the current context."
-	; supports shallow effect handlers
-	(ctx-handler *current-ctx*)
-)
-
-(defun context-set-handler (handler)
+(defun context-handler (&optional (handler #'null-handler))
 	"Sets the handler of the current context, returning the previous."
 	; supports shallow effect handlers
 	(shiftf (ctx-handler *current-ctx*) handler)
