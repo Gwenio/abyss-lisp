@@ -32,8 +32,11 @@
 	(continuation
 		(:conc-name cont-)
 		(:constructor make-continuation ()))
+	; the context to resume, `nil` if invalidated
 	(ctx)
+	; the handler to set when resumed
 	(handler)
+	; if `nil` normal-pass the value on resume, if `t` funcall it
 	(action)
 )
 
