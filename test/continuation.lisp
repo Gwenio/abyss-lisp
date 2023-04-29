@@ -9,7 +9,7 @@
 		:fresh-context :initial-context :push-frame :normal-pass
 	)
 	(:import-from :abyss/continuation
-		:perform-effect :perform-effect/k :resume-cont :resume-cont/h
+		:perform-effect :resume-cont :resume-cont/h :resume-cont/call
 	)
 )
 (in-package :abyss/test/continuation)
@@ -70,7 +70,11 @@
 	(cond
 		((eq effect *eff-bidir*)
 			#'(lambda (x)
-				(perform-effect/k (/ (car x) 2) *eff-dummy* (cdr x))
+				(resume-cont/call
+					(lambda ()
+						(perform-effect (/ (car x) 2) *eff-dummy*)
+					)
+					(cdr x))
 			)
 		)
 		((null effect) #'normal-pass)
