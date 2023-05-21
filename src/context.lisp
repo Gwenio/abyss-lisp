@@ -33,13 +33,15 @@
 	; `frames` represents a call stack.
 	; Ideally an implementation would switch out the 'real stack'
 	; and we would be storing stacks that are not currently in use
-	; but for a prototype that is too much work so an array of closures
-	; is used to simulate it
+	; but for a prototype that is too much work so cons cells are used
+	;
+	; Previous testing showed pushing and popping on arrays to be
+	; more expensive most of the time for recursive `fib`
+	; This goes both for `vector-push-extend` and switching to
+	; a new vector when `vector-push` fails.
 	;
 	; the closures take a context and an accumulator as parameters
-	(frames (make-array 0 :fill-pointer 0 :adjustable t)
-		:read-only t
-	)
+	(frames)
 	; `pending` points to the context to switch to if `frames` is emptied.
 	(pending)
 	; `handler` passed an effect and returns a function to call on the
@@ -188,12 +190,12 @@
 
 (defun push-frame (fun)
 	"Push a closure on the frames stack to be called by `normal-pass`."
-	(vector-push-extend fun (ctx-frames *current-ctx*))
+	(push fun (ctx-frames *current-ctx*))
 )
 
 (defun normal-pass (x)
 	"Pops and calls the closure of the top of the frames stack."
-	(funcall (vector-pop (ctx-frames *current-ctx*)) x)
+	(funcall (pop (ctx-frames *current-ctx*)) x)
 )
 
 (defun context-handler (&optional (handler #'null-handler))
