@@ -13,6 +13,8 @@
 		(:file "environment")
 		(:file "continuation")
 		(:file "evaluate")
+		(:file "helpers")
+		(:file "operatives")
 	)
 	:author "James Adam Armstrong"
 	;:maintainer ""
@@ -37,8 +39,10 @@
 		(:file "environment")
 		(:file "continuation")
 		(:file "evaluate")
+		(:file "operatives")
 	)
-	:perform (test-op (o c) (symbol-call :fiveam :run!
-		(find-symbol* :abyss-tests :abyss/test))
+	:perform (test-op (o c)
+		(symbol-call :fiveam :run!
+			(find-symbol* :abyss-tests :abyss/test))
 	)
 )

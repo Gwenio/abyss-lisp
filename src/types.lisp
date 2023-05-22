@@ -1,7 +1,7 @@
 
 ; ISC License (ISC)
 ;
-; Copyright 2022 James Adam Armstrong
+; Copyright 2022-2023 James Adam Armstrong
 ;
 ; Permission to use, copy, modify, and/or distribute this software for any
 ; purpose with or without fee is hereby granted, provided that the above copyright
@@ -21,7 +21,8 @@
 		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
 		:make-app :app-combiner :make-effect
 		:*eff-bad-continuation* :*eff-invalid-comb* :*eff-sym-not-found*
-		:*eff-improper-list*
+		:*eff-improper-list* :*eff-bad-param* :*eff-arg-pair* :*eff-arg-null*
+		:*eff-arg-repeat* :*eff-type-error*
 	)
 )
 (in-package :abyss/types)
@@ -52,3 +53,8 @@
 (defvar *eff-invalid-comb* (make-effect))
 (defvar *eff-sym-not-found* (make-effect))
 (defvar *eff-improper-list* (make-effect))
+(defvar *eff-bad-param* (make-effect))
+(defvar *eff-arg-pair* (make-effect))
+(defvar *eff-arg-null* (make-effect))
+(defvar *eff-arg-repeat* (make-effect))
+(defvar *eff-type-error* (make-effect))
