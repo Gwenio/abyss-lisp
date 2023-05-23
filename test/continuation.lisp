@@ -3,7 +3,10 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-effect :*eff-bad-continuation*
+		:make-effect :+eff-exn+
+	)
+	(:import-from :abyss/error
+		:bad-cont-p
 	)
 	(:import-from :abyss/context
 		:fresh-context :initial-context :push-frame :normal-pass
@@ -16,17 +19,19 @@
 
 (def-suite* abyss-continuation-tests :in abyss/test:abyss-tests)
 
-(defun root-handler (_effect)
-	(declare (ignore _effect))
-	(error "Unhandled effect.")
+(defun root-handler (eff)
+	(if (eq eff +eff-exn+)
+		#'normal-pass
+		(error "Unhandled effect.")
+	)
 )
 
-(defvar *eff-dummy* (make-effect))
-(defvar *eff-bidir* (make-effect))
+(defvar +eff-dummy+ (make-effect))
+(defvar +eff-bidir+ (make-effect))
 
 (defun test-handler-add (effect)
 	(cond
-		((eq effect *eff-dummy*)
+		((eq effect +eff-dummy+)
 			#'(lambda (x)
 				(resume-cont (+ (car x) 2) (cdr x))
 			)
@@ -38,16 +43,13 @@
 
 (defun test-handler-bad (effect)
 	(cond
-		((eq effect *eff-dummy*)
+		((eq effect +eff-dummy+)
 			#'(lambda (x)
 				(resume-cont (cdr x) (cdr x))
 			)
 		)
-		((eq effect *eff-bad-continuation*)
-			#'(lambda (_x)
-				(declare (ignore _x))
-				(normal-pass *eff-bad-continuation*)
-			)
+		((eq effect +eff-exn+)
+			(lambda (x) (normal-pass (car x)))
 		)
 		((null effect) #'normal-pass)
 		(t nil)
@@ -56,7 +58,7 @@
 
 (defun test-handler-shallow (effect)
 	(cond
-		((eq effect *eff-dummy*)
+		((eq effect +eff-dummy+)
 			#'(lambda (x)
 				(resume-cont/h (/ (car x) 2) (cdr x) #'test-handler-add)
 			)
@@ -68,11 +70,11 @@
 
 (defun test-handler-bidir (effect)
 	(cond
-		((eq effect *eff-bidir*)
+		((eq effect +eff-bidir+)
 			#'(lambda (x)
 				(resume-cont/call
 					(lambda ()
-						(perform-effect (/ (car x) 2) *eff-dummy*)
+						(perform-effect (/ (car x) 2) +eff-dummy+)
 					)
 					(cdr x))
 			)
@@ -92,7 +94,7 @@
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (normal-pass (* x 7))))
-				(is (eql 42 (perform-effect 5 *eff-dummy*)))
+				(is (eql 42 (perform-effect 5 +eff-dummy+)))
 			)
 			#'test-handler-add)
 	)
@@ -103,8 +105,8 @@
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (resume-cont t x)))
-				(is (eq *eff-bad-continuation*
-					(perform-effect nil *eff-dummy*))
+				(is (bad-cont-p
+					(perform-effect nil +eff-dummy+))
 				)
 			)
 		#'test-handler-bad)
@@ -117,8 +119,8 @@
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (normal-pass (* x 7))))
-				(push-frame #'(lambda (x) (perform-effect x *eff-dummy*)))
-				(is (eql 42 (perform-effect 10 *eff-dummy*)))
+				(push-frame #'(lambda (x) (perform-effect x +eff-dummy+)))
+				(is (eql 42 (perform-effect 10 +eff-dummy+)))
 			)
 			#'test-handler-shallow)
 	)
@@ -132,7 +134,7 @@
 				(fresh-context
 					(lambda ()
 						(push-frame #'(lambda (x) (normal-pass (* x 7))))
-						(is (eql 42 (perform-effect 10 *eff-bidir*)))
+						(is (eql 42 (perform-effect 10 +eff-bidir+)))
 					)
 					#'test-handler-add)
 			)

@@ -17,12 +17,10 @@
 
 (uiop:define-package :abyss/types
 	(:use :cl)
-	(:export :*inert* :*ignore* :*true* :*false*
+	(:export :+inert+ :+ignore+ :+true+ :+false+ :boole-type
 		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
 		:make-app :app-combiner :make-effect
-		:*eff-bad-continuation* :*eff-invalid-comb* :*eff-sym-not-found*
-		:*eff-improper-list* :*eff-bad-param* :*eff-arg-pair* :*eff-arg-null*
-		:*eff-arg-repeat* :*eff-type-error*
+		:+eff-exn+ :+eff-sym-not-found+
 	)
 )
 (in-package :abyss/types)
@@ -40,21 +38,14 @@
 )
 (defstruct effect)
 
-(defvar *inert* (make-literal-type))
-(defvar *ignore* (make-literal-type))
-(defvar *true* (make-boole-type))
-(defvar *false* (make-boole-type))
+(defvar +inert+ (make-literal-type))
+(defvar +ignore+ (make-literal-type))
+(defvar +true+ (make-boole-type))
+(defvar +false+ (make-boole-type))
 
-(defun inert-p (x) (eq *inert* x))
+(defun inert-p (x) (eq +inert+ x))
 
-(defun ignore-p (x) (eq *ignore* x))
+(defun ignore-p (x) (eq +ignore+ x))
 
-(defvar *eff-bad-continuation* (make-effect))
-(defvar *eff-invalid-comb* (make-effect))
-(defvar *eff-sym-not-found* (make-effect))
-(defvar *eff-improper-list* (make-effect))
-(defvar *eff-bad-param* (make-effect))
-(defvar *eff-arg-pair* (make-effect))
-(defvar *eff-arg-null* (make-effect))
-(defvar *eff-arg-repeat* (make-effect))
-(defvar *eff-type-error* (make-effect))
+(defvar +eff-exn+ (make-effect))
+(defvar +eff-sym-not-found+ (make-effect))

@@ -17,7 +17,8 @@
 
 (uiop:define-package :abyss/continuation
 	(:use :cl)
-	(:import-from :abyss/types :*eff-bad-continuation*)
+	(:import-from :abyss/types :+eff-exn+)
+	(:import-from :abyss/error :make-bad-cont)
 	(:import-from :abyss/context
 		:shift-context :resume-context :final-guard :normal-pass
 		:context-handler
@@ -75,7 +76,7 @@
 					)
 					(normal-pass ,x)
 				)
-				(perform-effect ,cont *eff-bad-continuation*)
+				(perform-effect (make-bad-cont ,cont) +eff-exn+)
 			)
 		)
 	)

@@ -9,6 +9,7 @@
 	:pathname "src/"
 	:components (
 		(:file "types")
+		(:file "error")
 		(:file "context")
 		(:file "environment")
 		(:file "continuation")

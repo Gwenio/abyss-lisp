@@ -18,8 +18,10 @@
 (uiop:define-package :abyss/helpers
 	(:use :cl)
 	(:import-from :abyss/types
-		:*true* :*false* :*eff-arg-pair* :*eff-arg-null* :*eff-type-error*
-		:*eff-improper-list* :*eff-improper-list*
+		:+true+ :+false+ :+eff-exn+ :boole-type
+	)
+	(:import-from :abyss/error
+		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
 	)
 	(:import-from :abyss/continuation
 		:perform-effect
@@ -29,7 +31,7 @@
 (in-package :abyss/helpers)
 
 (defun bad-tail (x)
-	(perform-effect x *eff-improper-list*)
+	(perform-effect (make-improper-list x) +eff-exn+)
 )
 
 (defmacro bind-params (args (env &rest params) &body body)
@@ -40,14 +42,14 @@
 				((null y)
 					`(if (null ,x)
 						,body
-						(perform-effect ,x *eff-arg-null*)
+						(perform-effect (make-arg-null ,x) +eff-exn+)
 					)
 				)
 				((consp y)
 					(setf body (impl `(cdr ,x) (cdr y)))
 					`(if (consp ,x)
 						,(impl `(car ,x) (car y))
-						(perform-effect ,x *eff-arg-pair*)
+						(perform-effect (make-arg-pair ,x) +eff-exn+)
 					)
 				)
 				((eq t y) body)
@@ -68,8 +70,11 @@
 
 (defmacro boole-branch (check t-branch f-branch)
 	`(cond
-		((eq ,check *true*) ,@t-branch)
-		((eq ,check *false*) ,@f-branch)
-		(t (perform-effect ,check *eff-type-error*))
+		((eq ,check +true+) ,@t-branch)
+		((eq ,check +false+) ,@f-branch)
+		(t (perform-effect
+			(make-type-exn ,check abyss/types:boole-type)
+			+eff-exn+)
+		)
 	)
 )

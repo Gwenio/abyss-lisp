@@ -21,7 +21,10 @@
 		:env-lookup :env-key-not-found
 	)
 	(:import-from :abyss/types
-		:app-comb :applicative-p :*eff-invalid-comb* :*eff-sym-not-found*
+		:app-comb :applicative-p :+eff-exn+ :+eff-sym-not-found+
+	)
+	(:import-from :abyss/error
+		:make-invalid-comb
 	)
 	(:import-from :abyss/continuation
 		:perform-effect
@@ -39,7 +42,7 @@
 		((keywordp x)
 			(handler-case (env-lookup env x)
 				(env-key-not-found ()
-					(perform-effect x *eff-sym-not-found*)
+					(perform-effect (list x env) +eff-sym-not-found+)
 				)
 				(:no-error (y) (normal-pass y))
 			)
@@ -64,7 +67,7 @@
 			)
 			; applicatives can only hold functions or applicatives
 			; so only at this point can an invalid combiner be encountered
-			(t (perform-effect combiner *eff-invalid-comb*))
+			(t (perform-effect (make-invalid-comb combiner) +eff-exn+))
 		)
 	)
 )

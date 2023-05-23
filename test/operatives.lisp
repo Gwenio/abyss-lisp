@@ -3,10 +3,20 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:*ignore* :*true* :*false* :applicative-p
-		:make-app :inert-p :*eff-invalid-comb* :*eff-sym-not-found*
-		:*eff-improper-list* :*eff-bad-param* :*eff-arg-pair* :*eff-arg-null*
-		:*eff-bad-continuation* :*eff-arg-repeat* :*eff-type-error*
+		:+ignore+ :+true+ :+false+ :applicative-p
+		:make-app :inert-p
+		:+eff-exn+ :+eff-sym-not-found+
+	)
+	(:import-from :abyss/error
+		:sym-not-found-exn :make-sym-not-found
+		:invalid-comb-exn
+		:improper-list-exn
+		:bad-param-exn
+		:arg-pair-exn
+		:arg-null-exn
+		:arg-repeat-exn
+		:bad-cont-exn
+		:type-exn
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-lookup :env-table :env-key-not-found
@@ -16,6 +26,9 @@
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
+	)
+	(:import-from :abyss/continuation
+		:perform-effect :resume-cont/call
 	)
 	(:import-from :abyss/operatives
 		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
@@ -39,15 +52,38 @@
 (defun root-handler (eff)
 	#'(lambda (x)
 		(cond
-			((eq eff *eff-sym-not-found*) (error 'sym-not-found :datum x))
-			((eq eff *eff-invalid-comb*) (error 'invalid-combiner :datum x))
-			((eq eff *eff-improper-list*) (error 'improper-list :datum x))
-			((eq eff *eff-bad-param*) (error 'bad-param-spec :datum x))
-			((eq eff *eff-arg-pair*) (error 'arg-expect-pair :datum x))
-			((eq eff *eff-arg-null*) (error 'arg-expect-null :datum x))
-			((eq eff *eff-arg-repeat*) (error 'arg-repeated :datum x))
-			((eq eff *eff-bad-continuation*) (error 'bad-continuation :datum x))
-			((eq eff  *eff-type-error*) (error 'arg-expect-type :datum x))
+			((eq eff +eff-exn+)
+				(let ((x (car x))) (typecase x
+					(sym-not-found-exn
+						(error 'sym-not-found :datum x))
+					(invalid-comb-exn
+						(error 'invalid-combiner :datum x))
+					(improper-list-exn
+						(error 'improper-list :datum x))
+					(bad-param-exn
+						(error 'bad-param-spec :datum x))
+					(arg-pair-exn
+						(error 'arg-expect-pair :datum x))
+					(arg-null-exn
+						(error 'arg-expect-null :datum x))
+					(arg-repeat-exn
+						(error 'arg-repeated :datum x))
+					(bad-cont-exn
+						(error 'bad-continuation :datum x))
+					(type-exn
+						(error 'arg-expect-type :datum x))
+					(t (print (type-of x)) (error "Unexpected exception"))
+				))
+			)
+			((eq eff +eff-sym-not-found+)
+				(resume-cont/call
+					(lambda ()
+						(perform-effect
+							(make-sym-not-found (first x) (second x))
+							+eff-exn+)
+					)
+					(cdr x))
+			)
 			(t (error "Unexpected effect"))
 		)
 	)
@@ -78,7 +114,7 @@
 )
 
 (test oper-def
-	(let ((env (make-environment nil)))
+	(let ((env (make-environment nil)) (fiveam:*on-error* :backtrace))
 		(is (inert-p
 			(run-oper-case
 				(flet ((foo (x) (normal-pass (cdr x))))
@@ -88,7 +124,7 @@
 							'(:x :y . :z)
 							(list* #'foo 1 2 3))
 						(list #'define-impl
-							(list* *ignore* '(:m :n) *ignore*)
+							(list* +ignore+ '(:m :n) +ignore+)
 							(list #'foo 4 (list 5 6)))
 						(list #'define-impl nil nil)
 					)
@@ -118,27 +154,27 @@
 	(let ((env (make-environment nil)))
 		(is (functionp
 			(run-oper-case
-				(list #'vau-impl nil *ignore*)
+				(list #'vau-impl nil +ignore+)
 				env))
 		)
 		(is (functionp
 			(run-oper-case
-				(list #'vau-impl nil *ignore* 1)
+				(list #'vau-impl nil +ignore+ 1)
 				env))
 		)
 		(signals improper-list
 			(run-oper-case
-				(list* #'vau-impl nil *ignore* 1)
+				(list* #'vau-impl nil +ignore+ 1)
 				env)
 		)
 		(is (inert-p
 			(run-oper-case
-				(list (list #'vau-impl nil *ignore*))
+				(list (list #'vau-impl nil +ignore+))
 				env))
 		)
 		(is (eql 1
 			(run-oper-case
-				(list (list #'vau-impl nil *ignore* 1))
+				(list (list #'vau-impl nil +ignore+ 1))
 				env))
 		)
 		(setf (gethash :ident (env-table env))
@@ -146,13 +182,13 @@
 		(setf (gethash :x (env-table env)) 42)
 		(is (eql 42
 			(run-oper-case
-				(list (list #'vau-impl nil *ignore* '(:ident :x)))
+				(list (list #'vau-impl nil +ignore+ '(:ident :x)))
 				env))
 		)
 		(is (eql 7
 			(run-oper-case
 				(list
-					(list #'vau-impl '(:y) *ignore*
+					(list #'vau-impl '(:y) +ignore+
 						'(:ident :x)
 						'(:ident :y))
 					7)
@@ -161,7 +197,7 @@
 		(is (eql 3
 			(run-oper-case
 				(list
-					(list #'vau-impl '(:y :x) *ignore*
+					(list #'vau-impl '(:y :x) +ignore+
 						'(:ident :y)
 						'(:ident :x))
 					7 3)
@@ -170,7 +206,7 @@
 		(is (eql 9
 			(run-oper-case
 				(list
-					(list #'vau-impl '(:y :x) *ignore*
+					(list #'vau-impl '(:y :x) +ignore+
 						'(:ident :y)
 						(list #'define-impl :x 9)
 						'(:ident :x))
@@ -250,16 +286,16 @@
 	(let ((env (make-environment nil)))
 		(is (eql 0
 			(run-oper-case
-				(list #'if-impl *true* 0 1)
+				(list #'if-impl +true+ 0 1)
 				env))
 		)
 		(is (eql 1
 			(run-oper-case
-				(list #'if-impl *false* 0 1)
+				(list #'if-impl +false+ 0 1)
 				env))
 		)
 		(loop with table = (env-table env)
-			for x in (list *true* *false* 0 1)
+			for x in (list +true+ +false+ 0 1)
 			for y in '(:w :x :y :z)
 			do (setf (gethash y table) x)
 		)
@@ -280,27 +316,27 @@
 	(let ((env (make-environment nil)))
 		(is (eql 0
 			(run-oper-case
-				(list #'cond-impl (list *true* 0))
+				(list #'cond-impl (list +true+ 0))
 				env))
 		)
 		(is (eql 1
 			(run-oper-case
 				(list #'cond-impl
-					(list *false* 0)
-					(list *true* 1)
+					(list +false+ 0)
+					(list +true+ 1)
 				)
 				env))
 		)
 		(is (eql 0
 			(run-oper-case
 				(list #'cond-impl
-					(list *true* 0)
-					(list *true* 1)
+					(list +true+ 0)
+					(list +true+ 1)
 				)
 				env))
 		)
 		(loop with table = (env-table env)
-			for x in (list *true* *false* 0 1)
+			for x in (list +true+ +false+ 0 1)
 			for y in '(:w :x :y :z)
 			do (setf (gethash y table) x)
 		)
@@ -336,7 +372,7 @@
 )
 
 (test oper-let
-	(let ((env (make-environment nil)) (fiveam:*on-error* :backtrace))
+	(let ((env (make-environment nil)))
 		(is (inert-p
 			(run-oper-case
 				(list #'let-impl nil)
@@ -396,7 +432,7 @@
 		(setf (gethash :<? (env-table env))
 			(make-app (lambda (args)
 				(normal-pass (if (< (second args) (third args))
-					*true* *false*
+					+true+ +false+
 				)))))
 		(setf (gethash :+ (env-table env))
 			(make-app (lambda (args)

@@ -18,9 +18,12 @@
 (uiop:define-package :abyss/operatives
 	(:use :cl)
 	(:import-from :abyss/types
-		:*inert* :*ignore* :*true* :*false* :ignore-p :make-app
-		:*eff-improper-list* :*eff-bad-param* :*eff-arg-pair* :*eff-arg-null*
-		:*eff-arg-repeat* :*eff-type-error*
+		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app :+eff-exn+
+		:boole-type
+	)
+	(:import-from :abyss/error
+		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
+		:make-type-exn
 	)
 	(:import-from :abyss/environment
 		:make-environment :environment-p :env-table :base-env-child
@@ -64,7 +67,7 @@
 (defun seq-impl (args)
 	(let ((body (cdr args)))
 		(cond
-			((null body) (normal-pass *inert*))
+			((null body) (normal-pass +inert+))
 			((consp body)
 				(funcall (seq-aux (car args) body) nil)
 			)
@@ -84,14 +87,14 @@
 							(setf binding (car next))
 							(impl (cdr next))
 						)
-						(normal-pass *inert*)
+						(normal-pass +inert+)
 					)
 				))
 				(cond
 					((null binding)
 						(if (null x)
 							(advance)
-							(perform-effect x *eff-arg-null*)
+							(perform-effect (make-arg-null x) +eff-exn+)
 						)
 					)
 					((consp binding)
@@ -101,12 +104,12 @@
 								(setf binding (car binding))
 								(impl (car x))
 							)
-							(perform-effect x *eff-arg-pair*)
+							(perform-effect (make-arg-pair x) +eff-exn+)
 						)
 					)
 					((keywordp binding)
 						(if (gethash binding used)
-							(perform-effect x *eff-arg-repeat*)
+							(perform-effect (make-arg-repeat x) +eff-exn+)
 							(progn
 								(setf (gethash binding table) x)
 								(setf (gethash binding used) t)
@@ -117,7 +120,7 @@
 					((ignore-p binding)
 						(advance)
 					)
-					(t (perform-effect binding *eff-bad-param*))
+					(t (perform-effect (make-bad-param binding) +eff-exn+))
 				))
 			))
 			#'impl
@@ -145,7 +148,7 @@
 
 (defun dummy-closure (_args)
 	(declare (ignore _args))
-	(normal-pass *inert*)
+	(normal-pass +inert+)
 )
 
 (defun vau-impl (args)
@@ -164,7 +167,7 @@
 				)
 				(t (bad-tail body))
 			)
-			(perform-effect eformal *eff-bad-param*)
+			(perform-effect (make-bad-param eformal) +eff-exn+)
 		)
 	)
 )
@@ -176,7 +179,7 @@
 				(normal-pass (make-app
 					(make-closure
 						(make-environment env)
-						(cons *ignore* bindings)
+						(cons +ignore+ bindings)
 						body)))
 			)
 			((null body)
@@ -223,11 +226,11 @@
 								(cond-aux env (cdr head) (cdr clauses)))
 							(evaluate (car head) env)
 						)
-						(perform-effect head *eff-arg-pair*)
+						(perform-effect (make-arg-pair head) +eff-exn+)
 					)
 				)
 			)
-			((null clauses) (normal-pass *inert*))
+			((null clauses) (normal-pass +inert+))
 			(t (bad-tail clauses))
 		)
 	)
@@ -259,11 +262,12 @@
 					finally (return (cons (let-aux (env-table env) y) z))
 				)
 				(type-error (e)
-					(perform-effect (type-error-datum e)
+					(raise-exn
 						(if (eq (type-error-expected-type e) 'cons)
-							*eff-arg-pair*
-							*eff-arg-null*
-						))
+							:arg-pair
+							:arg-null
+						)
+						(type-error-datum e))
 				)
 				(:no-error (v) (evaluate v ,(if rec 'env 'parent-env)))
 			)
