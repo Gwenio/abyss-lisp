@@ -101,11 +101,9 @@
 
 (defun next-context (x)
 	"Placed as the final frame on a context to switch to the next."
-	(let* ((prev *current-ctx*) (next (ctx-pending prev)))
-		(setf *current-ctx* next)
-		(let ((ret (funcall (ctx-handler next) nil)))
-			(funcall (or ret #'normal-pass) x)
-		)
+	(let ((prev *current-ctx*))
+		(setf *current-ctx* (ctx-pending prev))
+		(normal-pass x)
 	)
 )
 
@@ -156,12 +154,7 @@
 	"Creates an initial context. `fallback` is expected to raise an error."
 	(let ((*current-ctx* (make-context ())))
 		(push-frame #'identity)
-		(fresh-context run (lambda (effect)
-			(if effect
-				(funcall fallback effect)
-				#'normal-pass
-			)
-		))
+		(fresh-context run fallback)
 	)
 )
 
