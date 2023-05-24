@@ -4,8 +4,7 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:+ignore+ :+true+ :+false+ :applicative-p
-		:make-app :inert-p
-		:+eff-exn+ :+eff-sym-not-found+
+		:make-app :inert-p :+eff-exn+
 	)
 	(:import-from :abyss/error
 		:sym-not-found-exn :make-sym-not-found
@@ -19,7 +18,7 @@
 		:type-exn
 	)
 	(:import-from :abyss/environment
-		:make-environment :env-lookup :env-table :env-key-not-found
+		:make-environment :env-table
 	)
 	(:import-from :abyss/context
 		:initial-context :normal-pass
@@ -74,15 +73,6 @@
 						(error 'arg-expect-type :datum x))
 					(t (print (type-of x)) (error "Unexpected exception"))
 				))
-			)
-			((eq eff +eff-sym-not-found+)
-				(resume-cont/call
-					(lambda ()
-						(perform-effect
-							(make-sym-not-found (first x) (second x))
-							+eff-exn+)
-					)
-					(cdr x))
 			)
 			(t (error "Unexpected effect"))
 		)
@@ -452,5 +442,6 @@
 					`(:fib ,fib-n)) env)
 			) #'root-handler))
 		)
+		; todo: test that letrec evals bound values in the inner env
 	)
 )

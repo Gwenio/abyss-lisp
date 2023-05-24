@@ -3,7 +3,10 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-app :+eff-exn+ :+eff-sym-not-found+
+		:make-app :+eff-exn+
+	)
+	(:import-from :abyss/error
+		:invalid-comb-p :sym-not-found-p
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-lookup :env-table :env-key-not-found
@@ -24,8 +27,15 @@
 
 (defun root-handler (eff)
 	(cond
-		((eq eff +eff-sym-not-found+) (error 'sym-not-found))
-		((eq eff +eff-exn+) (error 'invalid-combiner))
+		((eq eff +eff-exn+)
+			(lambda (x)
+				(let ((exn (car x))) (cond
+					((invalid-comb-p exn) (error 'invalid-combiner))
+					((sym-not-found-p exn) (error 'sym-not-found))
+					(t (error "Unexpected exception."))
+				))
+			)
+		)
 		(t (error "Unexpected effect."))
 	)
 )

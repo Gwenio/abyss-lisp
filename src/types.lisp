@@ -19,8 +19,8 @@
 	(:use :cl)
 	(:export :+inert+ :+ignore+ :+true+ :+false+ :boole-type
 		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
-		:make-app :app-combiner :make-effect
-		:+eff-exn+ :+eff-sym-not-found+
+		:make-app :app-comb :make-effect :applicative
+		:+eff-exn+
 	)
 )
 (in-package :abyss/types)
@@ -48,4 +48,3 @@
 (defun ignore-p (x) (eq +ignore+ x))
 
 (defvar +eff-exn+ (make-effect))
-(defvar +eff-sym-not-found+ (make-effect))

@@ -21,10 +21,10 @@
 		:env-lookup :env-key-not-found
 	)
 	(:import-from :abyss/types
-		:app-comb :applicative-p :+eff-exn+ :+eff-sym-not-found+
+		:app-comb :applicative-p :+eff-exn+
 	)
 	(:import-from :abyss/error
-		:make-invalid-comb
+		:make-invalid-comb :make-sym-not-found
 	)
 	(:import-from :abyss/continuation
 		:perform-effect
@@ -42,7 +42,7 @@
 		((keywordp x)
 			(handler-case (env-lookup env x)
 				(env-key-not-found ()
-					(perform-effect (list x env) +eff-sym-not-found+)
+					(perform-effect (make-sym-not-found x env) +eff-exn+)
 				)
 				(:no-error (y) (normal-pass y))
 			)

@@ -26,8 +26,7 @@
 		:make-type-exn
 	)
 	(:import-from :abyss/environment
-		:make-environment :environment-p :env-table :base-env-child
-		:extend-base-env
+		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
 		:normal-pass :push-frame
@@ -262,12 +261,12 @@
 					finally (return (cons (let-aux (env-table env) y) z))
 				)
 				(type-error (e)
-					(raise-exn
+					(perform-effect
 						(if (eq (type-error-expected-type e) 'cons)
-							:arg-pair
-							:arg-null
+							(make-arg-pair (type-error-datum e))
+							(make-arg-null (type-error-datum e))
 						)
-						(type-error-datum e))
+						+eff-exn+)
 				)
 				(:no-error (v) (evaluate v ,(if rec 'env 'parent-env)))
 			)
