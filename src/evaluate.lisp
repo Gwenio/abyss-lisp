@@ -26,11 +26,8 @@
 	(:import-from :abyss/error
 		:make-invalid-comb :make-sym-not-found
 	)
-	(:import-from :abyss/continuation
-		:perform-effect
-	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame
+		:normal-pass :push-frame :perform-effect
 	)
 	(:export :evaluate)
 )

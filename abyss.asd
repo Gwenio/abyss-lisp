@@ -12,7 +12,6 @@
 		(:file "error")
 		(:file "context")
 		(:file "environment")
-		(:file "continuation")
 		(:file "evaluate")
 		(:file "helpers")
 		(:file "operatives")

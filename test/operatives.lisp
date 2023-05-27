@@ -21,13 +21,10 @@
 		:make-environment :env-table
 	)
 	(:import-from :abyss/context
-		:initial-context :normal-pass
+		:initial-context :normal-pass :perform-effect :resume-cont/call
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
-	)
-	(:import-from :abyss/continuation
-		:perform-effect :resume-cont/call
 	)
 	(:import-from :abyss/operatives
 		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl

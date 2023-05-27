@@ -29,13 +29,10 @@
 		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame
+		:normal-pass :push-frame :perform-effect
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
-	)
-	(:import-from :abyss/continuation
-		:perform-effect
 	)
 	(:import-from :abyss/helpers
 		:bad-tail :bind-params :boole-branch

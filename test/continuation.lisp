@@ -10,8 +10,6 @@
 	)
 	(:import-from :abyss/context
 		:fresh-context :initial-context :push-frame :normal-pass
-	)
-	(:import-from :abyss/continuation
 		:perform-effect :resume-cont :resume-cont/h :resume-cont/call
 	)
 )

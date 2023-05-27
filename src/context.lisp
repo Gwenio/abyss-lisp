@@ -17,9 +17,12 @@
 
 (uiop:define-package :abyss/context
 	(:use :cl)
+	(:import-from :abyss/types :+eff-exn+)
+	(:import-from :abyss/error :make-bad-cont)
 	(:export :shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass
-		:context-handler
+		:perform-effect :continuation-p
+		:resume-cont :resume-cont/h :resume-cont/call :resume-cont/call+h
 	)
 )
 (in-package :abyss/context)
@@ -135,7 +138,6 @@
 
 (defun resume-context (target)
 	"Resumes the suspended context."
-	; returning the resumed context allows for bidirectional effects
 	(rotatef (ctx-pending target) *current-ctx*)
 )
 
@@ -195,4 +197,73 @@
 	"Sets the handler of the current context, returning the previous."
 	; supports shallow effect handlers
 	(shiftf (ctx-handler *current-ctx*) handler)
+)
+
+(defstruct
+	(continuation
+		(:conc-name cont-)
+		(:constructor make-continuation (ctx handler)))
+	; the context to resume, `nil` if invalidated
+	(ctx)
+	; the handler to set when resumed
+	(handler)
+)
+
+(defun invalidate-cont (cont)
+	"Used as a guard to invalidate a continuation."
+	#'(lambda (x)
+		(setf (cont-ctx cont) nil)
+		(normal-pass x)
+	)
+)
+
+(defun perform-effect (x eff)
+	"Initiates effect handling."
+	(multiple-value-bind (h k) (shift-context eff)
+		(let ((cont (make-continuation k (context-handler))))
+			(push (invalidate-cont cont) (ctx-guards k))
+			(funcall h (cons x cont))
+		)
+	)
+)
+
+(defmacro resume-cont-body (cont handler action)
+	(let ((suspended (gensym "suspended")))
+		; invalidate cont if still valid
+		`(let ((,suspended (shiftf (cont-ctx ,cont) nil)))
+			(if ,suspended
+				(progn
+					(pop (ctx-guards ,suspended)) ; remove invalidat-cont
+					(context-handler ,handler)
+					(resume-context ,suspended)
+					,action
+				)
+				(perform-effect (make-bad-cont ,cont) +eff-exn+)
+			)
+		)
+	)
+)
+
+; deep handler
+(defun resume-cont (x cont)
+	"Resumes a continuation if it is valid."
+	(resume-cont-body cont (cont-handler cont) (normal-pass x))
+)
+
+; shallow handler support
+(defun resume-cont/h (x cont handler)
+	"Like `resume-cont`, but also sets a new handler."
+	(resume-cont-body cont handler (normal-pass x))
+)
+
+; bidirectional effect handling support,
+(defun resume-cont/call (f cont)
+	"Calls `f` at the point `cont` resumes at."
+	(resume-cont-body cont (cont-handler cont) (funcall f))
+)
+
+; bidirectional + shallow effect handling support
+(defun resume-cont/call+h (f cont handler)
+	"Like `resume-cont/call`, but also sets a new handler."
+	(resume-cont-body cont handler (funcall f))
 )

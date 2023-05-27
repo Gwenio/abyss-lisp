@@ -23,10 +23,10 @@
 	(:import-from :abyss/error
 		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
 	)
-	(:import-from :abyss/continuation
-		:perform-effect
+	(:import-from :abyss/context
+		:normal-pass :perform-effect
 	)
-	(:export :bad-tail :bind-params :boole-branch)
+	(:export :bad-tail :bind-params :boole-branch :type-pred-body)
 )
 (in-package :abyss/helpers)
 
@@ -63,7 +63,7 @@
 			`(let (,(list env `(car ,args)))
 				,(impl `(cdr ,args) params)
 			)
-			(impl args params)
+			`(progn (pop ,args) ,(impl args params))
 		)
 	)
 )
@@ -73,8 +73,17 @@
 		((eq ,check +true+) ,@t-branch)
 		((eq ,check +false+) ,@f-branch)
 		(t (perform-effect
-			(make-type-exn ,check abyss/types:boole-type)
+			(make-type-exn ,check 'boole)
 			+eff-exn+)
 		)
+	)
+)
+
+(defmacro type-pred-body (args x pred)
+	`(bind-params ,args (nil ,x)
+		(normal-pass (if ,pred
+			+true+
+			+false+
+		))
 	)
 )
