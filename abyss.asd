@@ -15,6 +15,7 @@
 		(:file "evaluate")
 		(:file "helpers")
 		(:file "operatives")
+		(:file "applicatives")
 	)
 	:author "James Adam Armstrong"
 	;:maintainer ""
@@ -40,6 +41,7 @@
 		(:file "continuation")
 		(:file "evaluate")
 		(:file "operatives")
+		(:file "applicatives")
 	)
 	:perform (test-op (o c)
 		(symbol-call :fiveam :run!

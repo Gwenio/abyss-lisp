@@ -17,7 +17,7 @@
 
 (uiop:define-package :abyss/types
 	(:use :cl)
-	(:export :+inert+ :+ignore+ :+true+ :+false+ :boole-type
+	(:export :+inert+ :+ignore+ :+true+ :+false+
 		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
 		:make-app :app-comb :make-effect :applicative
 		:+eff-exn+
