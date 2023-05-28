@@ -70,8 +70,8 @@
 
 (defmacro boole-branch (check t-branch f-branch)
 	`(cond
-		((eq ,check +true+) ,@t-branch)
-		((eq ,check +false+) ,@f-branch)
+		((eq ,check +true+) ,t-branch)
+		((eq ,check +false+) ,f-branch)
 		(t (perform-effect
 			(make-type-exn ,check 'boole)
 			+eff-exn+)

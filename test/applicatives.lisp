@@ -84,7 +84,7 @@
 )
 
 (test app-apply
-	(let ((env (make-environment nil)) (fiveam:*on-error* :backtrace))
+	(let ((env (make-environment nil)))
 		(is (eq env
 			(run-app-case
 				(list (make-app #'apply-impl)

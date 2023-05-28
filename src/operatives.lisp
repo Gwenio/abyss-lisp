@@ -189,8 +189,8 @@
 (defun if-aux (env then else)
 	(lambda (result)
 		(boole-branch result
-			((evaluate then env))
-			((evaluate else env))
+			(evaluate then env)
+			(evaluate else env)
 		)
 	)
 )
@@ -205,8 +205,8 @@
 (defun cond-aux (env then else)
 	#'(lambda (result)
 		(boole-branch result
-			((seq-impl (cons env then)))
-			((cond-impl (cons env else)))
+			(seq-impl (cons env then))
+			(cond-impl (cons env else))
 		)
 	)
 )
