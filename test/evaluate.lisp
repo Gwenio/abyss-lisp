@@ -3,7 +3,7 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-app :+eff-exn+
+		:make-app :+eff-exn+ :+eff-ret+
 	)
 	(:import-from :abyss/error
 		:invalid-comb-p :sym-not-found-p
@@ -27,6 +27,7 @@
 
 (defun root-handler (eff)
 	(cond
+		((eq eff +eff-ret+) #'identity)
 		((eq eff +eff-exn+)
 			(lambda (x)
 				(let ((exn (car x))) (cond

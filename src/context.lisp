@@ -17,7 +17,7 @@
 
 (uiop:define-package :abyss/context
 	(:use :cl)
-	(:import-from :abyss/types :+eff-exn+)
+	(:import-from :abyss/types :+eff-exn+ :+eff-ret+)
 	(:import-from :abyss/error :make-bad-cont)
 	(:export :shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass
@@ -68,13 +68,6 @@
 	)
 )
 
-; (defun unwind-handler (effect)
-; 	"Handler that initiates unwinding when the context resumes."
-; 	; Does not trigger for effects other than normal return.
-; 	; Normal return is indicated by `effect` being `nil`.
-; 	(if effect nil #'unwind-guards)
-; )
-
 (defun null-handler (_effect)
 	"Handler that always returns nil."
 	(declare (ignore _effect))
@@ -104,9 +97,13 @@
 
 (defun next-context (x)
 	"Placed as the final frame on a context to switch to the next."
-	(let ((prev *current-ctx*))
-		(setf *current-ctx* (ctx-pending prev))
-		(normal-pass x)
+	(let* (
+		(prev *current-ctx*)
+		(next (ctx-pending prev))
+		(handler (shiftf (ctx-handler next) #'null-handler))
+		)
+		(setf *current-ctx* next)
+		(funcall (or (funcall handler +eff-ret+) #'normal-pass) x)
 	)
 )
 
@@ -155,7 +152,6 @@
 (defun initial-context (run fallback)
 	"Creates an initial context. `fallback` is expected to raise an error."
 	(let ((*current-ctx* (make-context ())))
-		(push-frame #'identity)
 		(fresh-context run fallback)
 	)
 )

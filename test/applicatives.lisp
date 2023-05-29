@@ -4,7 +4,7 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:+ignore+ :+true+ :+false+ :applicative-p
-		:make-app :inert-p :+eff-exn+
+		:make-app :inert-p :+eff-exn+ :+eff-ret+
 	)
 	(:import-from :abyss/error
 		:sym-not-found-exn :make-sym-not-found
@@ -49,9 +49,10 @@
 (define-condition arg-expect-type (error) (datum))
 
 (defun root-handler (eff)
-	#'(lambda (x)
-		(cond
-			((eq eff +eff-exn+)
+	(cond
+		((eq eff +eff-ret+) #'identity)
+		((eq eff +eff-exn+)
+			(lambda (x)
 				(let ((x (car x))) (typecase x
 					(sym-not-found-exn
 						(error 'sym-not-found :datum x))
@@ -74,8 +75,8 @@
 					(t (print (type-of x)) (error "Unexpected exception"))
 				))
 			)
-			(t (error "Unexpected effect"))
 		)
+		(t (error "Unexpected effect"))
 	)
 )
 

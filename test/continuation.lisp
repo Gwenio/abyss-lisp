@@ -3,7 +3,7 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-effect :+eff-exn+
+		:make-effect :+eff-exn+ :+eff-ret+
 	)
 	(:import-from :abyss/error
 		:bad-cont-p
@@ -18,14 +18,17 @@
 (def-suite* abyss-continuation-tests :in abyss/test:abyss-tests)
 
 (defun root-handler (eff)
-	(if (eq eff +eff-exn+)
-		#'normal-pass
-		(error "Unhandled effect.")
+	(cond
+		((eq eff +eff-ret+) #'identity)
+		((eq eff +eff-exn+) #'normal-pass)
+		(t (print eff)
+			(error "Unhandled effect.")
+		)
 	)
 )
 
-(defvar +eff-dummy+ (make-effect))
-(defvar +eff-bidir+ (make-effect))
+(defvar +eff-dummy+ (make-effect 'dummy))
+(defvar +eff-bidir+ (make-effect 'bidir))
 
 (defun test-handler-add (effect)
 	(cond

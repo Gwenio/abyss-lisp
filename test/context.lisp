@@ -2,6 +2,7 @@
 (uiop:define-package :abyss/test/context
 	(:use :cl)
 	(:mix :fiveam)
+	(:import-from :abyss/types :+eff-ret+)
 	(:import-from :abyss/context
 		:shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass
@@ -11,18 +12,24 @@
 
 (def-suite* abyss-context-tests :in abyss/test:abyss-tests)
 
-(defun root-handler (_effect)
-	(declare (ignore _effect))
-	(error "Unhandled effect.")
+
+(defun root-handler (eff)
+	(cond
+		((eq eff +eff-ret+) #'identity)
+		(t (print eff)
+			(error "Unhandled effect.")
+		)
+	)
 )
 
-(defun shift-handler (effect)
-	(if effect
-		#'(lambda (x)
+
+(defun shift-handler (eff)
+	(if (eq eff +eff-ret+)
+		#'normal-pass
+		(lambda (x)
 			(resume-context (car x))
 			(normal-pass (cdr x))
 		)
-		#'normal-pass
 	)
 )
 
@@ -101,7 +108,7 @@
 					(setf called t)
 					(normal-pass x)
 				))
-				(multiple-value-bind (f _k) (shift-context nil)
+				(multiple-value-bind (f _k) (shift-context +eff-ret+)
  					(declare (ignore _k))
 					(is (eql 35 (funcall f 42)))
 					(is (eq t called))

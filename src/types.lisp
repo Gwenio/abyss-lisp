@@ -20,13 +20,15 @@
 	(:export :+inert+ :+ignore+ :+true+ :+false+
 		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
 		:make-app :app-comb :make-effect :applicative
-		:+eff-exn+
+		:+eff-exn+ :+eff-ret+ :+eff-init+
 	)
 )
 (in-package :abyss/types)
 
 (defstruct literal-type)
+
 (defstruct boole-type)
+
 (defstruct
 	(applicative
 		(:conc-name app-)
@@ -36,7 +38,13 @@
 		:read-only t
 	)
 )
-(defstruct effect)
+
+(defstruct
+	(effect
+		(:constructor make-effect (name))
+	)
+	(name)
+)
 
 (defvar +inert+ (make-literal-type))
 (defvar +ignore+ (make-literal-type))
@@ -47,4 +55,6 @@
 
 (defun ignore-p (x) (eq +ignore+ x))
 
-(defvar +eff-exn+ (make-effect))
+(defvar +eff-exn+ (make-effect 'exn))
+(defvar +eff-ret+ (make-effect 'ret))
+(defvar +eff-init+ (make-effect 'init))
