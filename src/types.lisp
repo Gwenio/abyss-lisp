@@ -25,7 +25,17 @@
 )
 (in-package :abyss/types)
 
-(defstruct literal-type)
+(defstruct
+	(inert-type
+		(:predicate inert-p)
+	)
+)
+
+(defstruct
+	(ignore-type
+		(:predicate ignore-p)
+	)
+)
 
 (defstruct boole-type)
 
@@ -46,14 +56,10 @@
 	(name)
 )
 
-(defvar +inert+ (make-literal-type))
-(defvar +ignore+ (make-literal-type))
+(defvar +inert+ (make-inert-type))
+(defvar +ignore+ (make-ignore-type))
 (defvar +true+ (make-boole-type))
 (defvar +false+ (make-boole-type))
-
-(defun inert-p (x) (eq +inert+ x))
-
-(defun ignore-p (x) (eq +ignore+ x))
 
 (defvar +eff-exn+ (make-effect 'exn))
 (defvar +eff-ret+ (make-effect 'ret))

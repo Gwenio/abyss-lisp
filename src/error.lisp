@@ -28,6 +28,7 @@
 		:arg-repeat-exn :arg-repeat-p :make-arg-repeat
 		:bad-cont-exn :bad-cont-p :make-bad-cont
 		:type-exn :type-exn-p :make-type-exn :type-exn-obj :type-exn-expect
+		:bad-handler-case-exn :bad-handler-case-p :make-bad-handler-case
 	)
 )
 (in-package :abyss/error)
@@ -112,4 +113,13 @@
 	)
 	(obj)
 	(expect)
+)
+
+(defstruct
+	(bad-handler-case-exn
+		(:constructor make-bad-handler-case (obj))
+		(:conc-name bad-handler-case-)
+		(:predicate bad-handler-case-p)
+	)
+	(obj)
 )

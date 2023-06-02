@@ -59,19 +59,23 @@
 
 (defun unwind-guards (x)
 	"Unwinds guards until `stop` is reached."
-	(if (ctx-guards *current-ctx*)
-		(progn
-			(push-frame #'unwind-guards)
-			(call-guard x)
+	(let ((guard (pop (ctx-guards *current-ctx*))))
+		(if guard
+			(progn
+				(push-frame #'unwind-guards)
+				(funcall guard x)
+			)
+			(next-context x)
 		)
-		(next-context x)
 	)
 )
 
-(defun null-handler (_effect)
-	"Handler that always returns nil."
-	(declare (ignore _effect))
-	nil
+(defun null-handler (effect)
+	"Handler that handles no effect except normal return."
+	(if (eq effect +eff-ret+)
+		#'normal-pass
+		nil
+	)
 )
 
 (defun discard-context (child)
@@ -103,7 +107,7 @@
 		(handler (shiftf (ctx-handler next) #'null-handler))
 		)
 		(setf *current-ctx* next)
-		(funcall (or (funcall handler +eff-ret+) #'normal-pass) x)
+		(funcall (funcall handler +eff-ret+) x)
 	)
 )
 
