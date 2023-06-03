@@ -45,7 +45,7 @@
 		:seq-impl
 	)
 	(:export :eff-p-impl :cont-p-impl :handler-p-impl
-		:make-eff-impl :throw-impl :recover-impl
+		:make-eff-impl :make-eff/k-impl :throw-impl :recover-impl
 		:resume-impl :resume/h-impl :resume/call-impl :resume/call+h-impl
 		:handler-impl :handler/s-impl :with-impl
 	)
@@ -104,7 +104,7 @@
 	(bind-params args (nil name)
 		(let ((eff (make-effect name t)))
 			(normal-pass (list eff
-				(make-app (make-eff-aux eff))))
+				(make-app (make-eff/k-aux eff))))
 		)
 	)
 )
@@ -226,8 +226,8 @@
 	)
 )
 
-(defmacro handler-impl-case (env cases params bodies aux)
-	(let ((x (gensym "x")) (y (gensym "y")))
+(defmacro handler-impl-case (cases)
+	(let ((x (gensym "x")) (y (gensym "y")) (p (gensym "p")) (b (gensym "b")))
 		`(loop for ,x on ,cases
 			while (consp ,x)
 			unless (and (consp (car ,x)) (consp (cdar ,x)) (consp (cddar ,x)))
@@ -235,13 +235,10 @@
 				(throw-exn (make-bad-handler-case (car ,x))))
 			else
 			collect (caar ,x) into ,y
-			and collect (cadar ,x) into ,params
-			and collect (cddar ,x) into ,bodies
+			and collect (cadar ,x) into ,p
+			and collect (cddar ,x) into ,b
 			end
-			finally (if ,x
-				(return (throw-exn (make-type-exn ,x 'list)))
-				(return (evaluate (cons (make-app ,aux) ,y) ,env))
-			)
+			finally (return (values ,x ,y ,p ,b))
 		)
 	)
 )
@@ -284,8 +281,15 @@
 	(bind-params args (env cont . cases)
 		(if (consp cases) ; must be at least one effect handled
 			(if (or (keywordp cont) (ignore-p cont))
-				(handler-impl-case env cases params bodies
-					(handler-aux cont nil params bodies #'handler-wrapper))
+				(multiple-value-bind (x y p b) (handler-impl-case cases)
+					(if x
+						(throw-exn (make-type-exn x 'list))
+						(evaluate (cons (make-app
+							(handler-aux cont nil p b
+								#'handler-wrapper))
+							y) env)
+					)
+				)
 				(throw-exn (make-bad-param cont))
 			)
 			(throw-exn (make-type-exn cont 'cons))
@@ -297,9 +301,15 @@
 	(bind-params args (env cont init . cases)
 		(if (consp cases) ; must be at least one effect handled
 			(if (or (keywordp cont) (ignore-p cont))
-				(handler-impl-case env cases params bodies
-					(handler-aux cont init params bodies
-						(handler-wrapper/init init)))
+				(multiple-value-bind (x y p b) (handler-impl-case cases)
+					(if x
+						(throw-exn (make-type-exn x 'list))
+						(evaluate (cons (make-app
+							(handler-aux cont init p b
+								(handler-wrapper/init init)))
+							y) env)
+					)
+				)
 				(throw-exn (make-bad-param cont))
 			)
 			(throw-exn (make-type-exn cont 'cons))
