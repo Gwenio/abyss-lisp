@@ -7,22 +7,13 @@
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
-		:sym-not-found-exn :make-sym-not-found
-		:invalid-comb-exn
-		:improper-list-exn
-		:bad-param-exn
-		:arg-pair-exn
-		:arg-null-exn
-		:arg-repeat-exn
-		:bad-cont-exn
-		:type-exn
-		:bad-handler-case-exn
+		:sym-not-found-p
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
 	)
 	(:import-from :abyss/context
-		:initial-context :normal-pass :perform-effect :resume-cont/call
+		:initial-context
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -32,7 +23,8 @@
 		:let-impl :let*-impl :letrec-impl :letrec*-impl
 	)
 	(:import-from :abyss/handlers
-		:make-eff-impl :with-impl :handler-impl :throw-impl
+		:make-eff-impl :make-eff/k-impl :with-impl :handler-impl
+		:throw-impl :recover-impl :resume-impl
 	)
 )
 (in-package :abyss/test/handlers)
@@ -42,47 +34,12 @@
 (defun root-handler (eff)
 	(cond
 		((eq eff +eff-ret+) #'identity)
-		((eq eff +eff-exn+)
-			(lambda (x)
-				(typecase x
-					(sym-not-found-exn x)
-					(invalid-comb-exn x)
-					(improper-list-exn x)
-					(bad-param-exn x)
-					(arg-pair-exn x)
-					(arg-null-exn x)
-					(arg-repeat-exn x)
-					(bad-cont-exn x)
-					(type-exn x)
-					(bad-handler-case-exn x)
-					(t
-						(print (type-of x))
-						(error "Unexpected exception")
-					)
-				)
-			)
+		((eq eff +eff-exn+) #'identity)
+		((eq eff +eff-fix+) #'first)
+		(t
+			(print eff)
+			(error "Unexpected effect")
 		)
-		((eq eff +eff-fix+)
-			(lambda (x)
-				(let ((x (car x))) (typecase x
-					(sym-not-found-exn x)
-					(invalid-comb-exn x)
-					(improper-list-exn x)
-					(bad-param-exn x)
-					(arg-pair-exn x)
-					(arg-null-exn x)
-					(arg-repeat-exn x)
-					(bad-cont-exn x)
-					(type-exn x)
-					(bad-handler-case-exn x)
-					(t
-						(print (type-of x))
-						(error "Unexpected recoverable exception")
-					)
-				))
-			)
-		)
-		(t (error "Unexpected effect"))
 	)
 )
 
@@ -90,8 +47,8 @@
 	`(initial-context (lambda () (evaluate ,x ,env)) #'root-handler)
 )
 
-(test handlers-basic
-	(let ((env (make-environment nil)))
+(test handlers-non-resume
+	(let ()
 		(is (eq t
 			(run-h-case
 				(list #'seq-impl
@@ -100,7 +57,64 @@
 					(list #'with-impl
 						(list #'handler-impl +ignore+ '(:eff :x :x))
 						(list :perform t)))
-				env))
+				(make-environment nil)))
+		)
+		(is (eq t ; with symbol for binding continuation
+			(run-h-case
+				(list #'seq-impl
+					(list #'define-impl '(:eff :perform)
+						(list #'make-eff-impl "dummy"))
+					(list #'with-impl
+						(list #'handler-impl :k '(:eff :x :x))
+						(list :perform t)))
+				(make-environment nil)))
+		)
+		(is (sym-not-found-p
+			(run-h-case ; check continuation is not bound for non-resumable
+				(list #'seq-impl
+					(list #'define-impl '(:eff :perform)
+						(list #'make-eff-impl "dummy"))
+					(list #'with-impl
+						(list #'handler-impl :k '(:eff :x :k))
+						(list :perform t)))
+				(make-environment nil)))
+		)
+	)
+)
+
+(test handlers-resumable
+	(let ()
+		(is (eq t
+			(run-h-case
+				(list #'seq-impl
+					(list #'define-impl '(:eff :perform)
+						(list #'make-eff/k-impl "dummy"))
+					(list #'with-impl
+						(list #'handler-impl +ignore+ '(:eff :x :x))
+						(list :perform t)))
+				(make-environment nil)))
+		)
+		(is (eq t ; with symbol for binding continuation
+			(run-h-case
+				(list #'seq-impl
+					(list #'define-impl '(:eff :perform)
+						(list #'make-eff/k-impl "dummy"))
+					(list #'with-impl
+						(list #'handler-impl :k '(:eff :x :x))
+						(list :perform t)))
+				(make-environment nil)))
+		)
+		(is (eq t ; check continuation is bound for resumable
+			(run-h-case
+				(list #'seq-impl
+					(list #'define-impl '(:eff :perform)
+						(list #'make-eff/k-impl "dummy"))
+					(list #'with-impl
+						(list #'handler-impl :k
+							(list :eff :x
+								(list (make-app #'resume-impl) :k :x)))
+						(list :perform t)))
+				(make-environment nil)))
 		)
 	)
 )
