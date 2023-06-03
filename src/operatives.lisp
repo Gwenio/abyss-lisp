@@ -18,8 +18,7 @@
 (uiop:define-package :abyss/operatives
 	(:use :cl)
 	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app :+eff-exn+
-		:boole-type
+		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
@@ -29,7 +28,7 @@
 		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame :perform-effect
+		:normal-pass :push-frame :throw-exn
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -90,7 +89,7 @@
 					((null binding)
 						(if (null x)
 							(advance)
-							(perform-effect (make-arg-null x) +eff-exn+)
+							(throw-exn (make-arg-null x))
 						)
 					)
 					((consp binding)
@@ -100,12 +99,12 @@
 								(setf binding (car binding))
 								(impl (car x))
 							)
-							(perform-effect (make-arg-pair x) +eff-exn+)
+							(throw-exn (make-arg-pair x))
 						)
 					)
 					((keywordp binding)
 						(if (gethash binding used)
-							(perform-effect (make-arg-repeat x) +eff-exn+)
+							(throw-exn (make-arg-repeat x))
 							(progn
 								(setf (gethash binding table) x)
 								(setf (gethash binding used) t)
@@ -116,7 +115,7 @@
 					((ignore-p binding)
 						(advance)
 					)
-					(t (perform-effect (make-bad-param binding) +eff-exn+))
+					(t (throw-exn (make-bad-param binding)))
 				))
 			))
 			#'impl
@@ -163,7 +162,7 @@
 				)
 				(t (bad-tail body))
 			)
-			(perform-effect (make-bad-param eformal) +eff-exn+)
+			(throw-exn (make-bad-param eformal))
 		)
 	)
 )
@@ -203,7 +202,7 @@
 )
 
 (defun cond-aux (env then else)
-	#'(lambda (result)
+	(lambda (result)
 		(boole-branch result
 			(seq-impl (cons env then))
 			(cond-impl (cons env else))
@@ -222,7 +221,7 @@
 								(cond-aux env (cdr head) (cdr clauses)))
 							(evaluate (car head) env)
 						)
-						(perform-effect (make-arg-pair head) +eff-exn+)
+						(throw-exn (make-arg-pair head))
 					)
 				)
 			)
@@ -233,7 +232,7 @@
 )
 
 (defun let-aux (table bindings)
-	(make-app #'(lambda (args)
+	(make-app (lambda (args)
 		(funcall (define-aux table bindings) (cdr args))
 	))
 )
@@ -258,12 +257,11 @@
 					finally (return (cons (let-aux (env-table env) y) z))
 				)
 				(type-error (e)
-					(perform-effect
+					(throw-exn
 						(if (eq (type-error-expected-type e) 'cons)
 							(make-arg-pair (type-error-datum e))
 							(make-arg-null (type-error-datum e))
-						)
-						+eff-exn+)
+						))
 				)
 				(:no-error (v) (evaluate v ,(if rec 'env 'parent-env)))
 			)

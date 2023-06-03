@@ -18,20 +18,20 @@
 (uiop:define-package :abyss/helpers
 	(:use :cl)
 	(:import-from :abyss/types
-		:+true+ :+false+ :+eff-exn+ :boole-type
+		:+true+ :+false+
 	)
 	(:import-from :abyss/error
 		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
 	)
 	(:import-from :abyss/context
-		:normal-pass :perform-effect
+		:normal-pass :throw-exn
 	)
 	(:export :bad-tail :bind-params :boole-branch :type-pred-body)
 )
 (in-package :abyss/helpers)
 
 (defun bad-tail (x)
-	(perform-effect (make-improper-list x) +eff-exn+)
+	(throw-exn (make-improper-list x))
 )
 
 (defmacro bind-params (args (env &rest params) &body body)
@@ -42,14 +42,14 @@
 				((null y)
 					`(if (null ,x)
 						,body
-						(perform-effect (make-arg-null ,x) +eff-exn+)
+						(throw-exn (make-arg-null ,x))
 					)
 				)
 				((consp y)
 					(setf body (impl `(cdr ,x) (cdr y)))
 					`(if (consp ,x)
 						,(impl `(car ,x) (car y))
-						(perform-effect (make-arg-pair ,x) +eff-exn+)
+						(throw-exn (make-arg-pair ,x))
 					)
 				)
 				((eq t y) body)
@@ -72,10 +72,7 @@
 	`(cond
 		((eq ,check +true+) ,t-branch)
 		((eq ,check +false+) ,f-branch)
-		(t (perform-effect
-			(make-type-exn ,check 'boole)
-			+eff-exn+)
-		)
+		(t (throw-exn (make-type-exn ,check 'boole)))
 	)
 )
 

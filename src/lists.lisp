@@ -17,20 +17,12 @@
 
 (uiop:define-package :abyss/lists
 	(:use :cl)
-	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :app-comb :effect-p :make-effect
-		:+eff-exn+
-	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
 		:make-type-exn :make-invalid-comb
 	)
-	; (:import-from :abyss/environment
-	; 	:make-environment :environment-p
-	; )
 	(:import-from :abyss/context
-		:normal-pass :perform-effect
+		:normal-pass :throw-exn
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -92,7 +84,7 @@
 	(bind-params args (nil x)
 		(if (consp x)
 			(normal-pass (car x))
-			(perform-effect (make-type-exn x 'cons) +eff-exn+)
+			(throw-exn (make-type-exn x 'cons))
 		)
 	)
 )
@@ -101,7 +93,7 @@
 	(bind-params args (nil (t . x))
 		(if (consp x)
 			(normal-pass (car x))
-			(perform-effect (make-type-exn x 'cons) +eff-exn+)
+			(throw-exn (make-type-exn x 'cons))
 		)
 	)
 )
@@ -110,7 +102,7 @@
 	(bind-params args (nil (t t . x))
 		(if (consp x)
 			(normal-pass (car x))
-			(perform-effect (make-type-exn x 'cons) +eff-exn+)
+			(throw-exn (make-type-exn x 'cons))
 		)
 	)
 )
@@ -122,11 +114,11 @@
 				if (consp x)
 				do (pop x)
 				else
-				do (return (perform-effect (make-type-exn x 'cons) +eff-exn+))
+				do (return (throw-exn (make-type-exn x 'cons)))
 				end
 				finally (return (normal-pass (car x)))
 			)
-			(perform-effect (make-type-exn n 'positive-int) +eff-exn+)
+			(throw-exn (make-type-exn n 'positive-int))
 		)
 	)
 )
@@ -135,7 +127,7 @@
 	(bind-params args (nil x)
 		(if (consp x)
 			(normal-pass (cdr x))
-			(perform-effect (make-type-exn x 'cons) +eff-exn+)
+			(throw-exn (make-type-exn x 'cons))
 		)
 	)
 )
@@ -147,11 +139,11 @@
 				if (consp x)
 				do (pop x)
 				else
-				do (return (perform-effect (make-type-exn x 'cons) +eff-exn+))
+				do (return (throw-exn (make-type-exn x 'cons)))
 				end
 				finally (return (normal-pass (cdr x)))
 			)
-			(perform-effect (make-type-exn n 'positive-int) +eff-exn+)
+			(throw-exn (make-type-exn n 'positive-int))
 		)
 	)
 )
@@ -172,7 +164,7 @@
 				(normal-pass (last x n))
 				(normal-pass x)
 			)
-			(perform-effect (make-type-exn n 'positive-int) +eff-exn+)
+			(throw-exn (make-type-exn n 'positive-int))
 		)
 	)
 )

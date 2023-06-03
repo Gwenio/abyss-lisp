@@ -4,7 +4,7 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:+ignore+ :+true+ :+false+ :applicative-p
-		:make-app :inert-p :+eff-exn+ :+eff-ret+
+		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
 		:sym-not-found-exn :make-sym-not-found
@@ -50,6 +50,34 @@
 		((eq eff +eff-ret+) #'identity)
 		((eq eff +eff-exn+)
 			(lambda (x)
+				(typecase x
+					(sym-not-found-exn
+						(error 'sym-not-found :datum x))
+					(invalid-comb-exn
+						(error 'invalid-combiner :datum x))
+					(improper-list-exn
+						(error 'improper-list :datum x))
+					(bad-param-exn
+						(error 'bad-param-spec :datum x))
+					(arg-pair-exn
+						(error 'arg-expect-pair :datum x))
+					(arg-null-exn
+						(error 'arg-expect-null :datum x))
+					(arg-repeat-exn
+						(error 'arg-repeated :datum x))
+					(bad-cont-exn
+						(error 'bad-continuation :datum x))
+					(type-exn
+						(error 'arg-expect-type :datum x))
+					(t
+						(print (type-of x))
+						(error "Unexpected exception")
+					)
+				)
+			)
+		)
+		((eq eff +eff-fix+)
+			(lambda (x)
 				(let ((x (car x))) (typecase x
 					(sym-not-found-exn
 						(error 'sym-not-found :datum x))
@@ -69,7 +97,10 @@
 						(error 'bad-continuation :datum x))
 					(type-exn
 						(error 'arg-expect-type :datum x))
-					(t (print (type-of x)) (error "Unexpected exception"))
+					(t
+						(print (type-of x))
+						(error "Unexpected recoverable exception")
+					)
 				))
 			)
 		)

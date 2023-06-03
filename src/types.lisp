@@ -18,9 +18,10 @@
 (uiop:define-package :abyss/types
 	(:use :cl)
 	(:export :+inert+ :+ignore+ :+true+ :+false+
-		:boole-type-p :inert-p :ignore-p :applicative-p :effect-p
-		:make-app :app-comb :make-effect :applicative
-		:+eff-exn+ :+eff-ret+ :+eff-init+
+		:boole-type-p :inert-p :ignore-p :applicative-p
+		:make-effect :effect-p :effect-name :effect-resumable
+		:make-app :app-comb :applicative
+		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 	)
 )
 (in-package :abyss/types)
@@ -51,9 +52,10 @@
 
 (defstruct
 	(effect
-		(:constructor make-effect (name))
+		(:constructor make-effect (name resumable))
 	)
-	(name)
+	(name t :read-only t)
+	(resumable t :read-only t)
 )
 
 (defvar +inert+ (make-inert-type))
@@ -61,6 +63,11 @@
 (defvar +true+ (make-boole-type))
 (defvar +false+ (make-boole-type))
 
-(defvar +eff-exn+ (make-effect 'exn))
-(defvar +eff-ret+ (make-effect 'ret))
-(defvar +eff-init+ (make-effect 'init))
+; non-resumable errors
+(defvar +eff-exn+ (make-effect 'exn nil))
+; resumabled errors
+(defvar +eff-fix+ (make-effect 'fix t))
+; normal returns
+(defvar +eff-ret+ (make-effect 'ret nil))
+; initialize stateful handler
+(defvar +eff-init+ (make-effect 'init t))

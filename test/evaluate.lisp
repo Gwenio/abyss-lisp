@@ -3,7 +3,7 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-app :+eff-exn+ :+eff-ret+
+		:make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
 		:invalid-comb-p :sym-not-found-p
@@ -29,12 +29,19 @@
 	(cond
 		((eq eff +eff-ret+) #'identity)
 		((eq eff +eff-exn+)
-			(lambda (x)
-				(let ((exn (car x))) (cond
+			(lambda (exn)
+				(cond
 					((invalid-comb-p exn) (error 'invalid-combiner))
-					((sym-not-found-p exn) (error 'sym-not-found))
 					(t (error "Unexpected exception."))
-				))
+				)
+			)
+		)
+		((eq eff +eff-fix+)
+			(lambda (exn)
+				(cond
+					((sym-not-found-p (car exn)) (error 'sym-not-found))
+					(t (error "Unexpected recoverable exception."))
+				)
 			)
 		)
 		(t (error "Unexpected effect."))

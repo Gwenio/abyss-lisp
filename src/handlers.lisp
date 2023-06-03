@@ -19,8 +19,9 @@
 	(:use :cl)
 	(:import-from :abyss/types
 		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :applicative :app-comb :effect-p :make-effect
-		:+eff-exn+ :+eff-ret+ :+eff-init+
+		:applicative-p :applicative :app-comb
+		:make-effect :effect-p :effect-name :effect-resumable
+		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
@@ -30,8 +31,8 @@
 		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
-		:fresh-context
-		:normal-pass :push-frame :perform-effect :continuation-p
+		:fresh-context :normal-pass :push-frame :throw-exn :recover-exn
+		:perform-effect :perform-effect/k :continuation-p
 		:resume-cont :resume-cont/h :resume-cont/call :resume-cont/call+h
 	)
 	(:import-from :abyss/evaluate
@@ -44,9 +45,9 @@
 		:seq-impl
 	)
 	(:export :eff-p-impl :cont-p-impl :handler-p-impl
-		:make-eff-impl :throw-impl
+		:make-eff-impl :throw-impl :recover-impl
 		:resume-impl :resume/h-impl :resume/call-impl :resume/call+h-impl
-		:handler-impl :with-impl
+		:handler-impl :handler/s-impl :with-impl
 	)
 )
 (in-package :abyss/handlers)
@@ -84,7 +85,24 @@
 
 (defun make-eff-impl (args)
 	(bind-params args (nil name)
-		(let ((eff (make-effect name)))
+		(let ((eff (make-effect name nil)))
+			(normal-pass (list eff
+				(make-app (make-eff-aux eff))))
+		)
+	)
+)
+
+(defun make-eff/k-aux (eff)
+	(lambda (args)
+		(bind-params args (nil x)
+			(perform-effect/k x eff)
+		)
+	)
+)
+
+(defun make-eff/k-impl (args)
+	(bind-params args (nil name)
+		(let ((eff (make-effect name t)))
 			(normal-pass (list eff
 				(make-app (make-eff-aux eff))))
 		)
@@ -93,7 +111,13 @@
 
 (defun throw-impl (args)
 	(bind-params args (nil x)
-		(perform-effect x +eff-exn+)
+		(throw-exn x)
+	)
+)
+
+(defun recover-impl (args)
+	(bind-params args (nil x)
+		(recover-exn x)
 	)
 )
 
@@ -101,7 +125,7 @@
 	(bind-params args (nil cont x)
 		(if (continuation-p cont)
 			(resume-cont x cont)
-			(perform-effect (make-type-exn cont 'continuation) +eff-exn+)
+			(throw-exn (make-type-exn cont 'continuation))
 		)
 	)
 )
@@ -110,7 +134,7 @@
 	(bind-params args (nil cont handler x)
 		(if (continuation-p cont)
 			(resume-cont/h x cont handler)
-			(perform-effect (make-type-exn cont 'continuation) +eff-exn+)
+			(throw-exn (make-type-exn cont 'continuation))
 		)
 	)
 )
@@ -125,7 +149,7 @@
 	(bind-params args (env cont . body)
 		(if (continuation-p cont)
 			(resume-cont/call (wrap-seq-aux env body) cont)
-			(perform-effect (make-type-exn cont 'continuation) +eff-exn+)
+			(throw-exn (make-type-exn cont 'continuation))
 		)
 	)
 )
@@ -134,7 +158,7 @@
 	(bind-params args (env cont handler . body)
 		(if (continuation-p cont)
 			(resume-cont/call+h (wrap-seq-aux env body) cont handler)
-			(perform-effect (make-type-exn cont 'continuation) +eff-exn+)
+			(throw-exn (make-type-exn cont 'continuation))
 		)
 	)
 )
@@ -171,16 +195,14 @@
 				do (if (effect-p eff)
 					(when (shiftf (gethash eff table)
 							(funcall wrapper env body
-								(if (eq eff +eff-ret+)
-									binds
+								(if (effect-resumable eff)
 									(cons binds cont)
+									binds
 								))
 						)
-						(return (perform-effect
-							(make-arg-repeat eff) +eff-exn+))
+						(return (throw-exn (make-arg-repeat eff)))
 					)
-					(return (perform-effect
-						(make-type-exn eff 'effect) +eff-exn+))
+					(return (throw-exn (make-type-exn eff 'effect)))
 				)
 				finally (return (normal-pass (if init
 					(progn
@@ -210,14 +232,14 @@
 			while (consp ,x)
 			unless (and (consp (car ,x)) (consp (cdar ,x)) (consp (cddar ,x)))
 			do (return
-				(perform-effect (make-bad-handler-case (car ,x)) +eff-exn+))
+				(throw-exn (make-bad-handler-case (car ,x))))
 			else
 			collect (caar ,x) into ,y
 			and collect (cadar ,x) into ,params
 			and collect (cddar ,x) into ,bodies
 			end
 			finally (if ,x
-				(return (perform-effect (make-type-exn ,x 'list) +eff-exn+))
+				(return (throw-exn (make-type-exn ,x 'list)))
 				(return (evaluate (cons (make-app ,aux) ,y) ,env))
 			)
 		)
@@ -259,28 +281,35 @@
 )
 
 (defun handler-impl (args)
+	(bind-params args (env cont . cases)
+		(if (consp cases) ; must be at least one effect handled
+			(if (or (keywordp cont) (ignore-p cont))
+				(handler-impl-case env cases params bodies
+					(handler-aux cont nil params bodies #'handler-wrapper))
+				(throw-exn (make-bad-param cont))
+			)
+			(throw-exn (make-type-exn cont 'cons))
+		)
+	)
+)
+
+(defun handler/s-impl (args)
 	(bind-params args (env cont init . cases)
 		(if (consp cases) ; must be at least one effect handled
-			(if (listp init)
-				(if (or (keywordp cont) (ignore-p cont))
-					(handler-impl-case env cases params bodies
-						(handler-aux cont init params bodies
-							(if init
-								(handler-wrapper/init init)
-								#'handler-wrapper
-							)))
-					(perform-effect (make-bad-param cont) +eff-exn+)
-				)
-				(perform-effect (make-bad-param init) +eff-exn+)
+			(if (or (keywordp cont) (ignore-p cont))
+				(handler-impl-case env cases params bodies
+					(handler-aux cont init params bodies
+						(handler-wrapper/init init)))
+				(throw-exn (make-bad-param cont))
 			)
-			(perform-effect (make-type-exn cont 'cons) +eff-exn+)
+			(throw-exn (make-type-exn cont 'cons))
 		)
 	)
 )
 
 (defvar +with-init-app+ (make-app
 	(lambda (args)
-		(perform-effect (cdr args) +eff-init+)
+		(perform-effect/k (cdr args) +eff-init+)
 	)))
 
 (defun with-aux (env body)
@@ -293,13 +322,13 @@
 							(wrap-seq-aux env (cons init body))
 							(handler-lookup handler))
 					)
-					(perform-effect (make-type-exn body 'cons) +eff-exn+)
+					(throw-exn (make-type-exn body 'cons))
 				)
 				(fresh-context
 					(wrap-seq-aux env body)
 					(handler-lookup handler))
 			)
-			(perform-effect (make-type-exn handler 'handler) +eff-exn+)
+			(throw-exn (make-type-exn handler 'handler))
 		)
 	)
 )

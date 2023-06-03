@@ -17,12 +17,13 @@
 
 (uiop:define-package :abyss/context
 	(:use :cl)
-	(:import-from :abyss/types :+eff-exn+ :+eff-ret+)
+	(:import-from :abyss/types :+eff-exn+ :+eff-fix+ :+eff-ret+)
 	(:import-from :abyss/error :make-bad-cont)
 	(:export :shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass
-		:perform-effect :continuation-p
+		:perform-effect :perform-effect/k :continuation-p
 		:resume-cont :resume-cont/h :resume-cont/call :resume-cont/call+h
+		:throw-exn :recover-exn
 	)
 )
 (in-package :abyss/context)
@@ -217,7 +218,7 @@
 	)
 )
 
-(defun perform-effect (x eff)
+(defun perform-effect/k (x eff)
 	"Initiates effect handling."
 	(multiple-value-bind (h k) (shift-context eff)
 		(let ((cont (make-continuation k (context-handler))))
@@ -225,6 +226,21 @@
 			(funcall h (cons x cont))
 		)
 	)
+)
+
+(defun perform-effect (x eff)
+	"Initiates effect handling, no continuation created."
+	(funcall (shift-context eff) x)
+)
+
+(defun throw-exn (exn)
+	"Throw non-resumable exception"
+	(perform-effect exn +eff-exn+)
+)
+
+(defun recover-exn (exn)
+	"Recover from a resumable exception"
+	(perform-effect/k exn +eff-fix+)
 )
 
 (defmacro resume-cont-body (cont handler action)
@@ -238,7 +254,7 @@
 					(resume-context ,suspended)
 					,action
 				)
-				(perform-effect (make-bad-cont ,cont) +eff-exn+)
+				(throw-exn (make-bad-cont ,cont))
 			)
 		)
 	)

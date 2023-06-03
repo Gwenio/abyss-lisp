@@ -3,14 +3,15 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-effect :+eff-exn+ :+eff-ret+
+		:make-effect :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
 		:bad-cont-p
 	)
 	(:import-from :abyss/context
 		:fresh-context :initial-context :push-frame :normal-pass
-		:perform-effect :resume-cont :resume-cont/h :resume-cont/call
+		:perform-effect :perform-effect/k
+		:resume-cont :resume-cont/h :resume-cont/call
 	)
 )
 (in-package :abyss/test/continuation)
@@ -21,14 +22,15 @@
 	(cond
 		((eq eff +eff-ret+) #'identity)
 		((eq eff +eff-exn+) #'normal-pass)
+		((eq eff +eff-fix+) #'normal-pass)
 		(t (print eff)
 			(error "Unhandled effect.")
 		)
 	)
 )
 
-(defvar +eff-dummy+ (make-effect 'dummy))
-(defvar +eff-bidir+ (make-effect 'bidir))
+(defvar +eff-dummy+ (make-effect 'dummy t))
+(defvar +eff-bidir+ (make-effect 'bidir t))
 
 (defun test-handler-add (effect)
 	(cond
@@ -45,13 +47,11 @@
 (defun test-handler-bad (effect)
 	(cond
 		((eq effect +eff-dummy+)
-			#'(lambda (x)
+			(lambda (x)
 				(resume-cont (cdr x) (cdr x))
 			)
 		)
-		((eq effect +eff-exn+)
-			(lambda (x) (normal-pass (car x)))
-		)
+		((eq effect +eff-exn+) #'normal-pass)
 		((eq effect +eff-ret+) #'normal-pass)
 		(t nil)
 	)
@@ -75,7 +75,7 @@
 			#'(lambda (x)
 				(resume-cont/call
 					(lambda ()
-						(perform-effect (/ (car x) 2) +eff-dummy+)
+						(perform-effect/k (/ (car x) 2) +eff-dummy+)
 					)
 					(cdr x))
 			)
@@ -95,7 +95,7 @@
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (normal-pass (* x 7))))
-				(is (eql 42 (perform-effect 5 +eff-dummy+)))
+				(is (eql 42 (perform-effect/k 5 +eff-dummy+)))
 			)
 			#'test-handler-add)
 	)
@@ -107,7 +107,7 @@
 			(lambda ()
 				(push-frame #'(lambda (x) (resume-cont t x)))
 				(is (bad-cont-p
-					(perform-effect nil +eff-dummy+))
+					(perform-effect/k nil +eff-dummy+))
 				)
 			)
 			#'test-handler-bad)
@@ -120,8 +120,8 @@
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (normal-pass (* x 7))))
-				(push-frame #'(lambda (x) (perform-effect x +eff-dummy+)))
-				(is (eql 42 (perform-effect 10 +eff-dummy+)))
+				(push-frame #'(lambda (x) (perform-effect/k x +eff-dummy+)))
+				(is (eql 42 (perform-effect/k 10 +eff-dummy+)))
 			)
 			#'test-handler-shallow)
 	)
@@ -135,7 +135,7 @@
 				(fresh-context
 					(lambda ()
 						(push-frame #'(lambda (x) (normal-pass (* x 7))))
-						(is (eql 42 (perform-effect 10 +eff-bidir+)))
+						(is (eql 42 (perform-effect/k 10 +eff-bidir+)))
 					)
 					#'test-handler-add)
 			)
