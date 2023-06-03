@@ -218,14 +218,18 @@
 	)
 )
 
-(defun perform-effect/k (x eff)
-	"Initiates effect handling."
-	(multiple-value-bind (h k) (shift-context eff)
+(defmacro perform/k-body (x eff)
+	`(multiple-value-bind (h k) (shift-context ,eff)
 		(let ((cont (make-continuation k (context-handler))))
 			(push (invalidate-cont cont) (ctx-guards k))
-			(funcall h (cons x cont))
+			(funcall h (cons ,x cont))
 		)
 	)
+)
+
+(defun perform-effect/k (x eff)
+	"Initiates effect handling."
+	(perform/k-body x eff)
 )
 
 (defun perform-effect (x eff)
@@ -235,12 +239,12 @@
 
 (defun throw-exn (exn)
 	"Throw non-resumable exception"
-	(perform-effect exn +eff-exn+)
+	(funcall (shift-context +eff-exn+) exn)
 )
 
 (defun recover-exn (exn)
 	"Recover from a resumable exception"
-	(perform-effect/k exn +eff-fix+)
+	(perform/k-body exn +eff-fix+)
 )
 
 (defmacro resume-cont-body (cont handler action)
