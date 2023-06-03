@@ -18,15 +18,10 @@
 (uiop:define-package :abyss/boole
 	(:use :cl)
 	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app
-		:+eff-exn+
-	)
-	(:import-from :abyss/environment
-		:make-environment :environment-p :env-table :base-env-child
-		:extend-base-env
+		:+true+ :+false+
 	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame :perform-effect
+		:normal-pass :push-frame
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
