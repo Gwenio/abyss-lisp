@@ -18,17 +18,17 @@
 (uiop:define-package :abyss/error
 	(:use :cl)
 	(:export
-		:sym-not-found-exn :sym-not-found-p :make-sym-not-found
+		:sym-not-found-p :make-sym-not-found
 		:sym-not-found-sym :sym-not-found-env
-		:invalid-comb-exn :invalid-comb-p :make-invalid-comb
-		:improper-list-exn :improper-list-exn-p :make-improper-list
-		:bad-param-exn :bad-param-p :make-bad-param
-		:arg-pair-exn :arg-pair-p :make-arg-pair
-		:arg-null-exn :arg-null-p :make-arg-null
-		:arg-repeat-exn :arg-repeat-p :make-arg-repeat
-		:bad-cont-exn :bad-cont-p :make-bad-cont
-		:type-exn :type-exn-p :make-type-exn :type-exn-obj :type-exn-expect
-		:bad-handler-case-exn :bad-handler-case-p :make-bad-handler-case
+		:invalid-comb-p :make-invalid-comb
+		:improper-list-p :make-improper-list
+		:bad-param-p :make-bad-param
+		:arg-pair-p :make-arg-pair
+		:arg-null-p :make-arg-null
+		:arg-repeat-p :make-arg-repeat
+		:bad-cont-p :make-bad-cont
+		:type-exn-p :make-type-exn :type-exn-obj :type-exn-expect
+		:bad-handler-case-p :make-bad-handler-case :bad-handler-case-obj
 	)
 )
 (in-package :abyss/error)
