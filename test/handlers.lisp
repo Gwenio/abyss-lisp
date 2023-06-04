@@ -3,7 +3,7 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:+ignore+ :+true+ :+false+ :applicative-p
+		:+inert+ :+ignore+ :+true+ :+false+ :applicative-p
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
@@ -22,8 +22,12 @@
 		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
 		:let-impl :let*-impl :letrec-impl :letrec*-impl
 	)
+	(:import-from :abyss/lists
+		:cons-impl
+	)
 	(:import-from :abyss/handlers
-		:make-eff-impl :make-eff/k-impl :with-impl :handler-impl
+		:make-eff-impl :make-eff/k-impl
+		:with-impl :handler-impl :handler/s-impl
 		:throw-impl :recover-impl :resume-impl
 	)
 )
@@ -128,6 +132,32 @@
 					(list (make-app #'throw-impl) t)
 				)
 				env))
+		)
+	)
+)
+
+(test handlers-state
+	(let ()
+		(is (equal '((4 . 2) 4 . 2)
+			(run-h-case
+				(list #'seq-impl
+					(list #'define-impl :resume
+						(make-app #'resume-impl))
+					(list #'define-impl :cons
+						(make-app #'cons-impl))
+					(list #'define-impl '(:load :get)
+						(list #'make-eff/k-impl "get"))
+					(list #'define-impl '(:save :set)
+						(list #'make-eff/k-impl "set"))
+					(list #'with-impl
+						(list #'handler/s-impl :k '(:state)
+							`(,+eff-ret+ :x (:cons :state :x))
+							'(:load nil ((:resume :k :state) :state))
+							`(:save :x ((:resume :k ,+inert+) :x)))
+						'(2)
+						'(:set (:cons 4 (:get nil)))
+						'(:get nil)))
+				(make-environment nil)))
 		)
 	)
 )
