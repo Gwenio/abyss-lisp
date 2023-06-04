@@ -231,14 +231,13 @@
 		`(loop for ,x on ,cases
 			while (consp ,x)
 			unless (and (consp (car ,x)) (consp (cdar ,x)) (consp (cddar ,x)))
-			do (return
-				(throw-exn (make-bad-handler-case (car ,x))))
+			do (return (values (make-bad-handler-case (car ,x)) nil nil nil))
 			else
 			collect (caar ,x) into ,y
 			and collect (cadar ,x) into ,p
 			and collect (cddar ,x) into ,b
 			end
-			finally (return (values ,x ,y ,p ,b))
+			finally (return (values (and ,x (make-type-exn ,x 'list)) ,y ,p ,b))
 		)
 	)
 )
@@ -260,14 +259,14 @@
 			(let ((child (make-environment env)))
 				(push-frame (lambda (_)
 					(declare (ignore _))
-					(make-app (lambda (x)
-						(abyss/operatives::seq-aux child body)
+					(normal-pass (make-app (lambda (x)
+						(push-frame (abyss/operatives::seq-aux child body))
 						(funcall
 							(abyss/operatives::define-aux
 								(env-table child)
 								init)
 							(cdr x))
-					))
+					)))
 				))
 				(funcall
 					(abyss/operatives::define-aux (env-table child) params)
@@ -283,7 +282,7 @@
 			(if (or (keywordp cont) (ignore-p cont))
 				(multiple-value-bind (x y p b) (handler-impl-case cases)
 					(if x
-						(throw-exn (make-type-exn x 'list))
+						(throw-exn x)
 						(evaluate (cons (make-app
 							(handler-aux cont nil p b
 								#'handler-wrapper))
@@ -303,7 +302,7 @@
 			(if (or (keywordp cont) (ignore-p cont))
 				(multiple-value-bind (x y p b) (handler-impl-case cases)
 					(if x
-						(throw-exn (make-type-exn x 'list))
+						(throw-exn x)
 						(evaluate (cons (make-app
 							(handler-aux cont init p b
 								(handler-wrapper/init init)))
