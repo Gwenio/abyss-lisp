@@ -21,8 +21,8 @@
 (defun root-handler (eff)
 	(cond
 		((eq eff +eff-ret+) #'identity)
-		((eq eff +eff-exn+) #'normal-pass)
-		((eq eff +eff-fix+) #'normal-pass)
+		((eq eff +eff-exn+) #'identity)
+		((eq eff +eff-fix+) #'first)
 		(t (print eff)
 			(error "Unhandled effect.")
 		)

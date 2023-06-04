@@ -9,7 +9,7 @@
 		:invalid-comb-p :sym-not-found-p
 	)
 	(:import-from :abyss/environment
-		:make-environment :env-lookup :env-table :env-key-not-found
+		:make-environment :env-table
 	)
 	(:import-from :abyss/context
 		:initial-context :normal-pass
@@ -22,29 +22,15 @@
 
 (def-suite* abyss-eval-tests :in abyss/test:abyss-tests)
 
-(define-condition sym-not-found (error) ())
-(define-condition invalid-combiner (error) ())
-
 (defun root-handler (eff)
 	(cond
 		((eq eff +eff-ret+) #'identity)
-		((eq eff +eff-exn+)
-			(lambda (exn)
-				(cond
-					((invalid-comb-p exn) (error 'invalid-combiner))
-					(t (error "Unexpected exception."))
-				)
-			)
+		((eq eff +eff-exn+) #'identity)
+		((eq eff +eff-fix+) #'first)
+		(t
+			(print eff)
+			(error "Unexpected effect")
 		)
-		((eq eff +eff-fix+)
-			(lambda (exn)
-				(cond
-					((sym-not-found-p (car exn)) (error 'sym-not-found))
-					(t (error "Unexpected recoverable exception."))
-				)
-			)
-		)
-		(t (error "Unexpected effect."))
 	)
 )
 
@@ -69,8 +55,8 @@
 	(let ((env (make-environment nil)))
 		(setf (gethash :x (env-table env)) nil)
 		(is (null (run-eval-case :x env)))
-		(signals sym-not-found
-			(run-eval-case :fake env))
+		(is (sym-not-found-p
+			(run-eval-case :fake env)))
 	)
 )
 
@@ -119,8 +105,8 @@
 
 (test eval-invalid-comb
 	(let ((empty (make-environment nil)))
-		(signals invalid-combiner
-			(run-eval-case (cons nil nil) empty)
+		(is (invalid-comb-p
+			(run-eval-case (cons nil nil) empty))
 		)
 	)
 )

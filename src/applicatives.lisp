@@ -19,17 +19,17 @@
 	(:use :cl)
 	(:import-from :abyss/types
 		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :applicative :app-comb :+eff-exn+
+		:applicative-p :app-comb
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
 		:make-type-exn :make-invalid-comb
 	)
 	(:import-from :abyss/environment
-		:make-environment :environment-p :environment
+		:make-environment :environment-p
 	)
 	(:import-from :abyss/context
-		:normal-pass :perform-effect
+		:normal-pass :throw-exn
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -48,7 +48,7 @@
 	(bind-params args (nil x env)
 		(if (environment-p env)
 			(evaluate x env)
-			(perform-effect (make-type-exn env 'environment) +eff-exn+)
+			(throw-exn (make-type-exn env 'abyss/environment::environment))
 		)
 	)
 )
@@ -57,7 +57,7 @@
 	(bind-params args (nil x)
 		(if (or (functionp x) (applicative-p x))
 			(normal-pass (make-app x))
-			(perform-effect (make-invalid-comb x) +eff-exn+)
+			(throw-exn (make-invalid-comb x))
 		)
 	)
 )
@@ -66,7 +66,7 @@
 	(bind-params args (nil x)
 		(if (applicative-p x)
 			(normal-pass (app-comb x))
-			(perform-effect (make-type-exn x 'applicative) +eff-exn+)
+			(throw-exn (make-type-exn x 'abyss/types::applicative))
 		)
 	)
 )
@@ -82,14 +82,14 @@
 					(bind-params opt (env)
 						(if (environment-p env)
 							(evaluate (cons app x) env)
-							(perform-effect (make-type-exn env 'environment)
-								+eff-exn+)
+							(throw-exn (make-type-exn env
+								'abyss/environment::environment))
 						)
 					)
 				)
-				(t (perform-effect (make-arg-pair opt) +eff-exn+))
+				(t (throw-exn (make-arg-pair opt)))
 			)
-			(perform-effect (make-type-exn app 'applicative) +eff-exn+)
+			(throw-exn (make-type-exn app 'abyss/types::applicative))
 		)
 	)
 )
@@ -99,9 +99,8 @@
 		(bind-params args (nil parent)
 			(if (environment-p parent)
 				(normal-pass (make-environment parent))
-				(perform-effect
-					(make-type-exn parent 'environment)
-					+eff-exn+)
+				(throw-exn (make-type-exn parent
+					'abyss/environment::environment))
 			)
 		)
 		(normal-pass (make-environment nil))

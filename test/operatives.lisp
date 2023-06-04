@@ -7,21 +7,13 @@
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
-		:sym-not-found-exn :make-sym-not-found
-		:invalid-comb-exn
-		:improper-list-exn
-		:bad-param-exn
-		:arg-pair-exn
-		:arg-null-exn
-		:arg-repeat-exn
-		:bad-cont-exn
-		:type-exn
+		:arg-null-p :arg-pair-p :improper-list-p
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
 	)
 	(:import-from :abyss/context
-		:initial-context :normal-pass :perform-effect :resume-cont/call
+		:initial-context :normal-pass
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -35,76 +27,15 @@
 
 (def-suite* abyss-operatives-tests :in abyss/test:abyss-tests)
 
-(define-condition sym-not-found (error) (datum))
-(define-condition invalid-combiner (error) (datum))
-(define-condition improper-list (error) (datum))
-(define-condition bad-param-spec (error) (datum))
-(define-condition arg-expect-pair (error) (datum))
-(define-condition arg-expect-null (error) (datum))
-(define-condition arg-repeated (error) (datum))
-(define-condition bad-continuation (error) (datum))
-(define-condition arg-expect-type (error) (datum))
-
 (defun root-handler (eff)
 	(cond
 		((eq eff +eff-ret+) #'identity)
-		((eq eff +eff-exn+)
-			(lambda (x)
-				(typecase x
-					(sym-not-found-exn
-						(error 'sym-not-found :datum x))
-					(invalid-comb-exn
-						(error 'invalid-combiner :datum x))
-					(improper-list-exn
-						(error 'improper-list :datum x))
-					(bad-param-exn
-						(error 'bad-param-spec :datum x))
-					(arg-pair-exn
-						(error 'arg-expect-pair :datum x))
-					(arg-null-exn
-						(error 'arg-expect-null :datum x))
-					(arg-repeat-exn
-						(error 'arg-repeated :datum x))
-					(bad-cont-exn
-						(error 'bad-continuation :datum x))
-					(type-exn
-						(error 'arg-expect-type :datum x))
-					(t
-						(print (type-of x))
-						(error "Unexpected exception")
-					)
-				)
-			)
+		((eq eff +eff-exn+) #'identity)
+		((eq eff +eff-fix+) #'first)
+		(t
+			(print eff)
+			(error "Unexpected effect")
 		)
-		((eq eff +eff-fix+)
-			(lambda (x)
-				(let ((x (car x))) (typecase x
-					(sym-not-found-exn
-						(error 'sym-not-found :datum x))
-					(invalid-comb-exn
-						(error 'invalid-combiner :datum x))
-					(improper-list-exn
-						(error 'improper-list :datum x))
-					(bad-param-exn
-						(error 'bad-param-spec :datum x))
-					(arg-pair-exn
-						(error 'arg-expect-pair :datum x))
-					(arg-null-exn
-						(error 'arg-expect-null :datum x))
-					(arg-repeat-exn
-						(error 'arg-repeated :datum x))
-					(bad-cont-exn
-						(error 'bad-continuation :datum x))
-					(type-exn
-						(error 'arg-expect-type :datum x))
-					(t
-						(print (type-of x))
-						(error "Unexpected recoverable exception")
-					)
-				))
-			)
-		)
-		(t (error "Unexpected effect"))
 	)
 )
 
@@ -156,15 +87,15 @@
 			when y
 			do (is (eql x (gethash y table)))
 		)
-		(signals arg-expect-null
+		(is (arg-null-p
 			(run-oper-case
 				(list #'define-impl nil 1)
-				env)
+				env))
 		)
-		(signals arg-expect-pair
+		(is (arg-pair-p
 			(run-oper-case
 				(list #'define-impl '(:x) 1)
-				env)
+				env))
 		)
 	)
 )
@@ -181,10 +112,10 @@
 				(list #'vau-impl nil +ignore+ 1)
 				env))
 		)
-		(signals improper-list
+		(is (improper-list-p
 			(run-oper-case
 				(list* #'vau-impl nil +ignore+ 1)
-				env)
+				env))
 		)
 		(is (inert-p
 			(run-oper-case
@@ -247,10 +178,10 @@
 				(list #'lambda-impl nil 1)
 				env))
 		)
-		(signals improper-list
+		(is (improper-list-p
 			(run-oper-case
 				(list* #'lambda-impl nil 1)
-				env)
+				env))
 		)
 		(is (inert-p
 			(run-oper-case
