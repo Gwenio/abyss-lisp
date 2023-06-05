@@ -13,7 +13,7 @@
 		:make-environment :env-table
 	)
 	(:import-from :abyss/context
-		:initial-context :normal-pass :perform-effect :resume-cont/call
+		:initial-context :normal-pass
 	)
 	(:import-from :abyss/evaluate
 		:evaluate

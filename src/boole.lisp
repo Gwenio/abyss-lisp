@@ -20,14 +20,17 @@
 	(:import-from :abyss/types
 		:+true+ :+false+ :boole-type-p
 	)
+	(:import-from :abyss/error
+		:make-improper-list
+	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame
+		:normal-pass :push-frame :recover-exn
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
 	)
 	(:import-from :abyss/helpers
-		:bad-tail :bind-params :boole-branch :type-pred-body
+		:bind-params :boole-branch :type-pred-body
 	)
 	(:export
 		:not-impl :and-app-impl :or-app-impl :and-oper-impl :or-oper-impl
@@ -58,7 +61,7 @@
 					(normal-pass +false+)
 				))
 				(null (normal-pass +true+))
-				(t (bad-tail y))
+				(t (recover-exn (make-improper-list y +true+)))
 			)))
 			(aux x)
 		)
@@ -74,7 +77,7 @@
 					(aux (cdr y))
 				))
 				(null (normal-pass +false+))
-				(t (bad-tail y))
+				(t (recover-exn (make-improper-list y +false+)))
 			)))
 			(aux x)
 		)
@@ -85,14 +88,14 @@
 	(if next
 		(labels ((impl (prev)
 			(boole-branch prev
-				(if (consp next)
+				(if (listp next)
 					(let ((head (pop next)))
 						(unless (null next)
 							(push-frame #'impl)
 						)
 						(evaluate head env)
 					)
-					(bad-tail next)
+					(recover-exn (make-improper-list next +true+))
 				)
 				(normal-pass prev)
 			)))
@@ -111,14 +114,14 @@
 		(labels ((impl (prev)
 			(boole-branch prev
 				(normal-pass prev)
-				(if (consp next)
+				(if (listp next)
 					(let ((head (pop next)))
 						(unless (null next)
 							(push-frame #'impl)
 						)
 						(evaluate head env)
 					)
-					(bad-tail next)
+					(recover-exn (make-improper-list next +false+))
 				)
 			)))
 			#'impl

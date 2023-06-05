@@ -24,14 +24,16 @@
 		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
 	)
 	(:import-from :abyss/context
-		:normal-pass :throw-exn
+		:normal-pass :throw-exn :recover-exn
 	)
 	(:export :bad-tail :bind-params :boole-branch :type-pred-body)
 )
 (in-package :abyss/helpers)
 
-(defun bad-tail (x)
-	(throw-exn (make-improper-list x))
+(defun bad-tail (tail)
+	(lambda (result)
+		(recover-exn (make-improper-list tail result))
+	)
 )
 
 (defmacro bind-params (args (env &rest params) &body body)

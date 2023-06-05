@@ -19,10 +19,10 @@
 	(:use :cl)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
-		:make-type-exn :make-invalid-comb
+		:make-type-exn :make-invalid-comb :make-improper-list
 	)
 	(:import-from :abyss/context
-		:normal-pass :throw-exn
+		:normal-pass :throw-exn :recover-exn
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -70,12 +70,12 @@
 					do (setf (cdr prev) (cons (cdr prev) (car z)))
 					finally (if (null z)
 						(return (normal-pass acc))
-						(return (bad-tail z))
+						(return (recover-exn (make-improper-list z acc)))
 					)
 				)
 			))
 			(null (normal-pass x))
-			(t (bad-tail y))
+			(t (recover-exn (make-improper-list y x)))
 		)
 	)
 )

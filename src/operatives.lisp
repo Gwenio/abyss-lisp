@@ -22,13 +22,13 @@
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
-		:make-type-exn
+		:make-type-exn :make-improper-list
 	)
 	(:import-from :abyss/environment
 		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame :throw-exn
+		:normal-pass :push-frame :throw-exn :recover-exn
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -50,7 +50,7 @@
 				(cond
 					((consp tail) (push-frame #'aux))
 					((null tail) nil)
-					(t (push-frame #'bad-tail))
+					(t (push-frame (bad-tail tail)))
 				)
 				(evaluate head env)
 			)
@@ -66,7 +66,7 @@
 			((consp body)
 				(funcall (seq-aux (car args) body) nil)
 			)
-			(t (bad-tail body))
+			(t (recover-exn (make-improper-list body +inert+)))
 		)
 	)
 )
@@ -160,7 +160,7 @@
 				((null body)
 					(normal-pass #'dummy-closure)
 				)
-				(t (bad-tail body))
+				(t (throw-exn (make-type-exn body 'list)))
 			)
 			(throw-exn (make-bad-param eformal))
 		)
@@ -180,7 +180,7 @@
 			((null body)
 				(normal-pass (make-app #'dummy-closure))
 			)
-			(t (bad-tail body))
+			(t (throw-exn (make-type-exn body 'list)))
 		)
 	)
 )
@@ -226,7 +226,7 @@
 				)
 			)
 			((null clauses) (normal-pass +inert+))
-			(t (bad-tail clauses))
+			(t (recover-exn (make-improper-list clauses +inert+)))
 		)
 	)
 )
@@ -240,10 +240,10 @@
 (defmacro let-body (args rec)
 	`(bind-params ,args (parent-env bindings . body)
 		(let ((env (make-environment parent-env)))
-			(cond
-				((consp body) (push-frame (seq-aux env body)))
-				((null body) nil)
-				(t (push-frame #'bad-tail))
+			(typecase body
+				(cons (push-frame (seq-aux env body)))
+				(null nil)
+				(t (push-frame (bad-tail body)))
 			)
 			(handler-case
 				(loop for x in bindings
@@ -271,18 +271,18 @@
 
 (defmacro let*-body (args basic iterative)
 	`(bind-params ,args (parent-env bindings . body)
-		(cond
-			((consp bindings)
+		(typecase bindings
+			(cons
 				(,basic (list
 					parent-env
 					(list (car bindings))
 					(list* (function ,iterative) (cdr bindings) body)
 				))
 			)
-			((null bindings)
+			(null
 				(seq-impl (cons (make-environment parent-env) body))
 			)
-			(t (bad-tail bindings))
+			(t (throw-exn (make-type-exn bindings 'list)))
 		)
 	)
 )

@@ -22,6 +22,7 @@
 		:sym-not-found-sym :sym-not-found-env
 		:invalid-comb-p :make-invalid-comb
 		:improper-list-p :make-improper-list
+		:improper-list-tail :improper-list-result
 		:bad-param-p :make-bad-param
 		:arg-pair-p :make-arg-pair
 		:arg-null-p :make-arg-null
@@ -29,6 +30,7 @@
 		:bad-cont-p :make-bad-cont
 		:type-exn-p :make-type-exn :type-exn-obj :type-exn-expect
 		:bad-handler-case-p :make-bad-handler-case :bad-handler-case-obj
+		:div-by-zero-p :make-div-by-zero :div-by-zero-obj
 	)
 )
 (in-package :abyss/error)
@@ -53,11 +55,12 @@
 )
 (defstruct
 	(improper-list-exn
-		(:constructor make-improper-list (obj))
+		(:constructor make-improper-list (tail result))
 		(:conc-name improper-list-)
 		(:predicate improper-list-p)
 	)
-	(obj)
+	(tail)
+	(result)
 )
 
 (defstruct
@@ -120,6 +123,15 @@
 		(:constructor make-bad-handler-case (obj))
 		(:conc-name bad-handler-case-)
 		(:predicate bad-handler-case-p)
+	)
+	(obj)
+)
+
+(defstruct
+	(div-by-zero-exn
+		(:constructor make-div-by-zero (obj))
+		(:conc-name div-by-zero-)
+		(:predicate div-by-zero-p)
 	)
 	(obj)
 )

@@ -7,7 +7,7 @@
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
-		:arg-null-p :arg-pair-p :improper-list-p
+		:arg-null-p :arg-pair-p :improper-list-p :type-exn-p
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -112,7 +112,7 @@
 				(list #'vau-impl nil +ignore+ 1)
 				env))
 		)
-		(is (improper-list-p
+		(is (type-exn-p
 			(run-oper-case
 				(list* #'vau-impl nil +ignore+ 1)
 				env))
@@ -178,7 +178,7 @@
 				(list #'lambda-impl nil 1)
 				env))
 		)
-		(is (improper-list-p
+		(is (type-exn-p
 			(run-oper-case
 				(list* #'lambda-impl nil 1)
 				env))
