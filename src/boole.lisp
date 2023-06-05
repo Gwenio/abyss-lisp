@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/boole
 	(:use :cl)
 	(:import-from :abyss/types
-		:+true+ :+false+
+		:+true+ :+false+ :boole-type-p
 	)
 	(:import-from :abyss/context
 		:normal-pass :push-frame
@@ -27,14 +27,18 @@
 		:evaluate
 	)
 	(:import-from :abyss/helpers
-		:bad-tail :bind-params :boole-branch
+		:bad-tail :bind-params :boole-branch :type-pred-body
 	)
 	(:export
 		:not-impl :and-app-impl :or-app-impl :and-oper-impl :or-oper-impl
-		:eq-impl
+		:eq-impl :boole-p-impl
 	)
 )
 (in-package :abyss/boole)
+
+(defun boole-p-impl (args)
+	(type-pred-body args x (boole-type-p x))
+)
 
 (defun not-impl (args)
 	(bind-params args (nil x)
