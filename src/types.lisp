@@ -38,7 +38,12 @@
 	)
 )
 
-(defstruct boole-type)
+(defstruct
+	(boole-type
+		(:constructor make-boole-type (x))
+	)
+	(x nil :read-only t)
+)
 
 (defstruct
 	(applicative
@@ -60,8 +65,8 @@
 
 (defvar +inert+ (make-inert-type))
 (defvar +ignore+ (make-ignore-type))
-(defvar +true+ (make-boole-type))
-(defvar +false+ (make-boole-type))
+(defvar +true+ (make-boole-type t))
+(defvar +false+ (make-boole-type nil))
 
 ; non-resumable errors
 (defvar +eff-exn+ (make-effect 'exn nil))
