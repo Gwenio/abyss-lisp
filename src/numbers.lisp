@@ -57,9 +57,10 @@
 (defun add-impl (args)
 	(bind-params args (nil . tail)
 		(labels ((aux (n)
+			(declare (type rational n))
 			(typecase tail
 				(cons (let ((x (pop tail)))
-					(if (realp x)
+					(if (rationalp x)
 						(aux (+ n x))
 						(throw-exn (make-type-exn x 'number))
 					)
@@ -74,11 +75,12 @@
 
 (defun sub-impl (args)
 	(bind-params args (nil head . tail)
-		(if (realp head)
+		(if (rationalp head)
 			(if tail
 				(labels ((aux (n)
+					(declare (type rational n))
 					(let ((x (pop tail)))
-						(if (realp x)
+						(if (rationalp x)
 							(typecase tail
 								(cons (aux (- n x)))
 								(null (normal-pass (- n x)))
@@ -99,9 +101,10 @@
 (defun mul-impl (args)
 	(bind-params args (nil . tail)
 		(labels ((aux (n)
+			(declare (type rational n))
 			(typecase tail
 				(cons (let ((x (pop tail)))
-					(if (realp x)
+					(if (rationalp x)
 						(aux (* n x))
 						(throw-exn (make-type-exn x 'number))
 					)
@@ -116,11 +119,12 @@
 
 (defun div-impl (args)
 	(bind-params args (nil head . tail)
-		(if (realp head)
+		(if (rationalp head)
 			(if tail
 				(labels ((aux (n)
+					(declare (type rational n))
 					(let ((x (pop tail)))
-						(if (realp x)
+						(if (rationalp x)
 							(if (zerop x)
 								(typecase tail
 									(cons
@@ -153,11 +157,12 @@
 
 (defun min-impl (args)
 	(bind-params args (nil head . tail)
-		(if (realp head)
+		(if (rationalp head)
 			(labels ((aux (n)
+				(declare (type rational n))
 				(typecase tail
 					(cons (let ((x (pop tail)))
-						(if (realp x)
+						(if (rationalp x)
 							(aux (min n x))
 							(throw-exn (make-type-exn x 'number))
 						)
@@ -174,11 +179,12 @@
 
 (defun max-impl (args)
 	(bind-params args (nil head . tail)
-		(if (realp head)
+		(if (rationalp head)
 			(labels ((aux (n)
+				(declare (type rational n))
 				(typecase tail
 					(cons (let ((x (pop tail)))
-						(if (realp x)
+						(if (rationalp x)
 							(aux (max n x))
 							(throw-exn (make-type-exn x 'number))
 						)
@@ -195,8 +201,8 @@
 
 (defun mod-impl (args)
 	(bind-params args (nil n divisor)
-		(if (realp n)
-			(if (realp divisor)
+		(if (rationalp n)
+			(if (rationalp divisor)
 				(normal-pass (mod n divisor))
 				(throw-exn (make-type-exn divisor 'number))
 			)
@@ -207,8 +213,8 @@
 
 (defun rem-impl (args)
 	(bind-params args (nil n divisor)
-		(if (realp n)
-			(if (realp divisor)
+		(if (rationalp n)
+			(if (rationalp divisor)
 				(normal-pass (rem n divisor))
 				(throw-exn (make-type-exn divisor 'number))
 			)
@@ -219,7 +225,7 @@
 
 (defun abs-impl (args)
 	(bind-params args (nil n)
-		(if (realp n)
+		(if (rationalp n)
 			(normal-pass (abs n))
 			(throw-exn (make-type-exn n 'number))
 		)
@@ -246,12 +252,13 @@
 
 (defmacro num-comp-body (pred args)
 	`(bind-params ,args (nil head . tail)
-		(if (realp head)
+		(if (rationalp head)
 			(labels ((aux (n)
+				(declare (type rational n))
 				(typecase tail
 					(cons
 						(let ((x (pop tail)))
-							(if (realp x)
+							(if (rationalp x)
 								(if (,pred n x)
 									(aux x)
 									(normal-pass +false+)

@@ -42,34 +42,36 @@
 )
 (in-package :abyss/operatives)
 
-(defun seq-aux (env tail)
-	(labels (
-		(aux (_)
+(declaim (ftype (function (abyss/environment::environment cons) function)
+	seq-aux))
+
+(defun seq-aux (env next)
+		(lambda (_)
 			(declare (ignore _))
-			(let ((head (pop tail)))
-				(cond
-					((consp tail) (push-frame #'aux))
-					((null tail) nil)
+			(let ((head (car next)) (tail (cdr next)))
+				(typecase tail
+					(cons (push-frame (seq-aux env tail)))
+					(null nil)
 					(t (push-frame (bad-tail tail)))
 				)
 				(evaluate head env)
 			)
-		))
-		#'aux
-	)
+		)
 )
 
 (defun seq-impl (args)
 	(let ((body (cdr args)))
-		(cond
-			((null body) (normal-pass +inert+))
-			((consp body)
+		(typecase body
+			(cons
 				(funcall (seq-aux (car args) body) nil)
 			)
+			(null (normal-pass +inert+))
 			(t (recover-exn (make-improper-list body +inert+)))
 		)
 	)
 )
+
+(declaim (ftype (function (hash-table t) function) define-aux))
 
 (defun define-aux (table binding)
 	(let ((pending nil) (used (make-hash-table :test 'eq)))
@@ -85,14 +87,8 @@
 						(normal-pass +inert+)
 					)
 				))
-				(cond
-					((null binding)
-						(if (null x)
-							(advance)
-							(throw-exn (make-arg-null x))
-						)
-					)
-					((consp binding)
+				(typecase binding
+					(cons
 						(if (consp x)
 							(progn
 								(push (cons (cdr binding) (cdr x)) pending)
@@ -102,7 +98,13 @@
 							(throw-exn (make-arg-pair x))
 						)
 					)
-					((keywordp binding)
+					(null
+						(if (null x)
+							(advance)
+							(throw-exn (make-arg-null x))
+						)
+					)
+					(keyword
 						(if (gethash binding used)
 							(throw-exn (make-arg-repeat x))
 							(progn
@@ -112,7 +114,7 @@
 							)
 						)
 					)
-					((ignore-p binding)
+					(abyss/types::ignore-type
 						(advance)
 					)
 					(t (throw-exn (make-bad-param binding)))
@@ -130,8 +132,11 @@
 	)
 )
 
+(declaim (ftype (function (abyss/environment::environment t cons) function)
+	make-closure))
+
 (defun make-closure (static-env formal-params body)
-	#'(lambda (args)
+	(lambda (args)
 		(let ((local-env (make-environment static-env)))
 			(push-frame (seq-aux local-env body))
 			(funcall
@@ -149,15 +154,15 @@
 (defun vau-impl (args)
 	(bind-params args (env bindings eformal . body)
 		(if (or (keywordp eformal) (ignore-p eformal))
-			(cond
-				((consp body)
+			(typecase body
+				(cons
 					(normal-pass
 						(make-closure
 							(make-environment env)
 							(cons eformal bindings)
 							body))
 				)
-				((null body)
+				(null
 					(normal-pass #'dummy-closure)
 				)
 				(t (throw-exn (make-type-exn body 'list)))
@@ -169,15 +174,15 @@
 
 (defun lambda-impl (args)
 	(bind-params args (env bindings . body)
-		(cond
-			((consp body)
+		(typecase body
+			(cons
 				(normal-pass (make-app
 					(make-closure
 						(make-environment env)
 						(cons +ignore+ bindings)
 						body)))
 			)
-			((null body)
+			(null
 				(normal-pass (make-app #'dummy-closure))
 			)
 			(t (throw-exn (make-type-exn body 'list)))

@@ -51,7 +51,7 @@
 	; `handler` passed an effect and returns a function to call on the
 	; target context
 	; `nil` is passed for a 'normal' return
-	(handler #'null-handler)
+	(handler #'null-handler :type function)
 	; `guards` is a list of closures to call if the context is discarded
 	(guards)
 )
@@ -61,6 +61,7 @@
 (defun unwind-guards (x)
 	"Unwinds guards until `stop` is reached."
 	(let ((guard (pop (ctx-guards *current-ctx*))))
+		(declare (type (or function null) guard))
 		(if guard
 			(progn
 				(push-frame #'unwind-guards)
@@ -108,9 +109,14 @@
 		(handler (shiftf (ctx-handler next) #'null-handler))
 		)
 		(setf *current-ctx* next)
-		(funcall (funcall handler +eff-ret+) x)
+		(let ((ret-fn (funcall handler +eff-ret+)))
+			(declare (type function ret-fn))
+			(funcall ret-fn x)
+		)
 	)
 )
+
+(declaim (ftype (function (t) (values function context)) shift-context))
 
 (defun shift-context (effect)
 	"Returns handler's result, the suspended context, and the resumed context."
@@ -143,6 +149,9 @@
 	(rotatef (ctx-pending target) *current-ctx*)
 )
 
+(declaim (ftype (function (function function) t)
+	initial-context fresh-context))
+
 (defun fresh-context (run handler)
 	"Creates a child context. Sets a `final-guard` to discard the child"
 	(let* ((ctx *current-ctx*) (fresh (make-context ctx)))
@@ -169,8 +178,13 @@
 
 (defun call-guard (x)
 	"Pops the next guard on a context and calls it."
-	(funcall (pop (ctx-guards *current-ctx*)) x)
+	(let ((guard (pop (ctx-guards *current-ctx*))))
+		(declare (type function guard))
+		(funcall guard x)
+	)
 )
+
+(declaim (ftype (function (function) t) error-guard final-guard push-frame))
 
 (defun error-guard (guard)
 	"Push a guard that only runs only on unwind."
@@ -191,7 +205,10 @@
 
 (defun normal-pass (x)
 	"Pops and calls the closure of the top of the frames stack."
-	(funcall (pop (ctx-frames *current-ctx*)) x)
+	(let ((f (pop (ctx-frames *current-ctx*))))
+		(declare (type function f))
+		(funcall f x)
+	)
 )
 
 (defun context-handler (&optional (handler #'null-handler))
@@ -207,7 +224,7 @@
 	; the context to resume, `nil` if invalidated
 	(ctx)
 	; the handler to set when resumed
-	(handler)
+	(handler #'null-handler :type function)
 )
 
 (defun invalidate-cont (cont)
@@ -276,12 +293,15 @@
 	(resume-cont-body cont handler (normal-pass x))
 )
 
+(declaim (ftype (function (function continuation) t) resume-cont/call))
 ; bidirectional effect handling support,
 (defun resume-cont/call (f cont)
 	"Calls `f` at the point `cont` resumes at."
 	(resume-cont-body cont (cont-handler cont) (funcall f))
 )
 
+(declaim (ftype (function (function continuation function) t)
+	resume-cont/call+h))
 ; bidirectional + shallow effect handling support
 (defun resume-cont/call+h (f cont handler)
 	"Like `resume-cont/call`, but also sets a new handler."

@@ -84,6 +84,9 @@
 	)
 )
 
+(declaim (ftype (function (abyss/environment::environment t) function)
+	and-oper-aux or-oper-aux))
+
 (defun and-oper-aux (env next)
 	(if next
 		(labels ((impl (prev)

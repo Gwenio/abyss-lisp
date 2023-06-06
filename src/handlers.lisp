@@ -176,7 +176,10 @@
 
 (defun init-handler-aux (args)
 	(lambda (app)
-		(funcall (app-comb app) (cons nil args))
+		(let ((f (app-comb app)))
+			(declare (type function f))
+			(funcall f (cons nil args))
+		)
 	)
 )
 
@@ -184,6 +187,8 @@
 	(push-frame (init-handler-aux (car args)))
 	(resume-cont nil (cdr args))
 )
+
+(declaim (ftype (function (t t cons cons function) t) handler-aux))
 
 (defun handler-aux (cont init params bodies wrapper)
 	(labels ((aux (args)

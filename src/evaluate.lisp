@@ -33,6 +33,8 @@
 )
 (in-package :abyss/evaluate)
 
+(declaim (ftype (function (t abyss/environment::environment) t) evaluate))
+
 (defun evaluate (x env)
 	"The main evaluation function."
 	(cond
@@ -52,9 +54,11 @@
 	)
 )
 
+(declaim (ftype (function (abyss/types::applicative) function) combine))
+
 (defun precombine (args)
 	"Initial dispatch on combiner type."
-	#'(lambda (combiner)
+	(lambda (combiner)
 		(cond
 			((applicative-p combiner)
 				(funcall (combine combiner) args)
@@ -69,18 +73,15 @@
 	)
 )
 
-; TODO: investigate further use of labels to eliminate extra closue creations
 (defun combine (app)
 	"Unwraps applicatives for combination."
-	(labels (
-		(impl (args)
+	(lambda (args)
 			(let ((combiner (app-comb app)))
+				(declare (type (or function abyss/types::applicative)
+					combiner))
 				(if (functionp combiner)
 					(push-frame combiner)
-					(progn
-						(setf app (app-comb app))
-						(push-frame #'impl)
-					)
+					(push-frame (combine combiner))
 				)
 			)
 			(let ((env (car args)) (tail (cdr args)))
@@ -96,22 +97,25 @@
 				)
 			)
 		)
-		)
-		#'impl
-	)
 )
+
+(declaim (ftype (function (cons cons) function) eval-tail))
 
 (defun eval-tail (head tail)
 	"Finishs up for `eval-map`."
-	#'(lambda (prev)
+	(lambda (prev)
 		(setf (cdr tail) prev)
 		(normal-pass head)
 	)
 )
 
+(declaim (ftype
+	(function (abyss/environment::environment t cons cons) function)
+	eval-map))
+
 (defun eval-map (env next head tail)
 	"Evaluates arguments passed to an applicative."
-	#'(lambda (prev)
+	(lambda (prev)
 		(setf (car tail) prev)
 		(if (consp next)
 			(let ((fresh (list nil)))
