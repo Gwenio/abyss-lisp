@@ -1,7 +1,7 @@
 
 ; ISC License (ISC)
 ;
-; Copyright 2022 James Adam Armstrong
+; Copyright 2022-2023 James Adam Armstrong
 ;
 ; Permission to use, copy, modify, and/or distribute this software for any
 ; purpose with or without fee is hereby granted, provided that the above copyright
@@ -17,8 +17,8 @@
 
 (uiop:define-package :abyss/environment
 	(:use :cl)
-	(:export :make-environment :environment-p :env-table :env-lookup
-		:env-key-not-found
+	(:export
+		:make-environment :environment-p :env-table :env-lookup
 	)
 )
 (in-package :abyss/environment)
@@ -38,16 +38,14 @@
 	)
 )
 
-(define-condition env-key-not-found (error) ())
-
 (defun env-lookup (env key)
 	(multiple-value-bind (value found) (gethash key (env-table env))
 		(if found
-			value
+			(values t value)
 			(let ((parent (env-parent env)))
 				(if parent
 					(env-lookup parent key)
-					(error 'env-key-not-found)
+					(values nil nil)
 				)
 			)
 		)

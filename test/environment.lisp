@@ -4,7 +4,6 @@
 	(:mix :fiveam)
 	(:import-from :abyss/environment
 		:make-environment :environment-p :env-table :env-lookup
-		:env-key-not-found
 	)
 )
 (in-package :abyss/test/environment)
@@ -22,11 +21,20 @@
 	(let ((env (make-environment nil)))
 		(let ((table (env-table env)))
 			(setf (gethash :x table) 42)
-			(is (eql 42 (env-lookup env :x)))
+			(is (eql 42 (multiple-value-bind (found x) (env-lookup env :x)
+				(is (eq t found))
+				x
+			)))
 			(setf (gethash :y table) 7)
-			(is (eql 7 (env-lookup env :y)))
+			(is (eql 7 (multiple-value-bind (found x) (env-lookup env :y)
+				(is (eq t found))
+				x
+			)))
 			(setf (gethash :x table) 3)
-			(is (eql 3 (env-lookup env :x)))
+			(is (eql 3 (multiple-value-bind (found x) (env-lookup env :x)
+				(is (eq t found))
+				x
+			)))
 		)
 	)
 )
@@ -36,10 +44,22 @@
 		(let ((p-table (env-table parent)) (child (make-environment parent)))
 			(let ((c-table (env-table child)))
 				(setf (gethash :x p-table) 42)
-				(is (eql 42 (env-lookup child :x)))
+				(is (eql 42 (multiple-value-bind (found x)
+					(env-lookup child :x)
+					(is (eq t found))
+					x
+				)))
 				(setf (gethash :x c-table) 7)
-				(is (eql 7 (env-lookup child :x)))
-				(is (eql 42 (env-lookup parent :x)))
+				(is (eql 7 (multiple-value-bind (found x)
+					(env-lookup child :x)
+					(is (eq t found))
+					x
+				)))
+				(is (eql 42 (multiple-value-bind (found x)
+					(env-lookup parent :x)
+					(is (eq t found))
+					x
+				)))
 			)
 		)
 	)
@@ -47,6 +67,9 @@
 
 (test env-failure
 	(let ((env (make-environment nil)))
-		(signals env-key-not-found (env-lookup env :x))
+		(is (not (multiple-value-bind (found _) (env-lookup env :x)
+			(declare (ignore _))
+			found
+		)))
 	)
 )

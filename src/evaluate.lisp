@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/evaluate
 	(:use :cl)
 	(:import-from :abyss/environment
-		:env-lookup :env-key-not-found
+		:env-lookup
 	)
 	(:import-from :abyss/types
 		:app-comb :applicative-p
@@ -39,11 +39,11 @@
 	"The main evaluation function."
 	(cond
 		((keywordp x)
-			(handler-case (env-lookup env x)
-				(env-key-not-found ()
+			(multiple-value-bind (found v) (env-lookup env x)
+				(if found
+					(normal-pass v)
 					(recover-exn (make-sym-not-found x env))
 				)
-				(:no-error (y) (normal-pass y))
 			)
 		)
 		((consp x)
