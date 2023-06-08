@@ -38,12 +38,14 @@
 	)
 )
 
+(declaim (ftype (function (environment t) (values t t)) env-lookup))
+
 (defun env-lookup (env key)
 	(multiple-value-bind (value found) (gethash key (env-table env))
 		(if found
 			(values t value)
 			(let ((parent (env-parent env)))
-				(if parent
+				(if (environment-p parent)
 					(env-lookup parent key)
 					(values nil nil)
 				)
