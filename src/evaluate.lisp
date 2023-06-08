@@ -35,10 +35,13 @@
 
 (declaim (ftype (function (t abyss/environment::environment) t) evaluate))
 
+(declaim (ftype (function (abyss/environment::environment t) function)
+	precombine))
+
 (defun evaluate (x env)
 	"The main evaluation function."
-	(cond
-		((keywordp x)
+	(typecase x
+		(keyword
 			(multiple-value-bind (found v) (env-lookup env x)
 				(if found
 					(normal-pass v)
@@ -46,24 +49,26 @@
 				)
 			)
 		)
-		((consp x)
-			(push-frame (precombine (cons env (cdr x))))
+		(cons
+			(push-frame (precombine env (cons env (cdr x))))
 			(evaluate (car x) env)
 		)
 		(t (normal-pass x))
 	)
 )
 
-(declaim (ftype (function (abyss/types::applicative) function) combine))
+(declaim (ftype (function
+	(abyss/types::applicative abyss/environment::environment cons) t)
+	combine))
 
-(defun precombine (args)
+(defun precombine (env args)
 	"Initial dispatch on combiner type."
 	(lambda (combiner)
-		(cond
-			((applicative-p combiner)
-				(funcall (combine combiner) args)
+		(typecase combiner
+			(abyss/types::applicative
+				(combine combiner env args)
 			)
-			((functionp combiner)
+			(function
 				(funcall combiner args)
 			)
 			; applicatives can only hold functions or applicatives
@@ -73,59 +78,64 @@
 	)
 )
 
-(defun combine (app)
-	"Unwraps applicatives for combination."
-	(lambda (args)
-			(let ((combiner (app-comb app)))
-				(declare (type (or function abyss/types::applicative)
-					combiner))
-				(if (functionp combiner)
-					(push-frame combiner)
-					(push-frame (combine combiner))
-				)
-			)
-			(let ((env (car args)) (tail (cdr args)))
-				(if (consp tail)
-					(let ((head (list env nil)))
-						(push-frame (eval-map env (cdr tail) head (cdr head)))
-						(evaluate (car tail) env)
-					)
-					(let ((head (list env)))
-						(push-frame (eval-tail head head))
-						(evaluate tail env)
-					)
-				)
-			)
-		)
-)
+(declaim (ftype (function (function cons) function) eval-tail))
 
-(declaim (ftype (function (cons cons) function) eval-tail))
-
-(defun eval-tail (head tail)
+(defun eval-tail (done tail)
 	"Finishs up for `eval-map`."
 	(lambda (prev)
 		(setf (cdr tail) prev)
-		(normal-pass head)
+		(funcall done)
 	)
 )
 
 (declaim (ftype
-	(function (abyss/environment::environment t cons cons) function)
+	(function (abyss/environment::environment t function cons) function)
 	eval-map))
 
-(defun eval-map (env next head tail)
+(defun eval-map (env next done tail)
 	"Evaluates arguments passed to an applicative."
 	(lambda (prev)
-		(setf (car tail) prev)
-		(if (consp next)
-			(let ((fresh (list nil)))
-				(setf (cdr tail) fresh)
-				(push-frame (eval-map env (cdr next) head fresh))
-				(evaluate (car next) env)
+		(let ((fresh (setf (cdr tail) (list prev))))
+			(typecase next
+				(cons
+					(push-frame (eval-map env (cdr next) done fresh))
+					(evaluate (car next) env)
+				)
+				(keyword
+					(push-frame (eval-tail done fresh))
+					(evaluate next env)
+				)
+				(t
+					(setf (cdr fresh) next)
+					(funcall done)
+				)
 			)
-			(progn
-				(push-frame (eval-tail head tail))
-				(evaluate next env)
+		)
+	)
+)
+
+(defun combine (app env args)
+	"Unwraps applicatives for combination."
+	(let ((next
+		(let ((combiner (app-comb app)))
+			(declare (type (or function abyss/types::applicative)
+				combiner))
+			(if (functionp combiner)
+				(lambda () (funcall combiner args))
+				(lambda () (combine combiner env args))
+			)
+		)))
+		(let ((tail (cdr args)))
+			(typecase tail
+				(cons
+					(push-frame (eval-map env (cdr tail) next args))
+					(evaluate (car tail) env)
+				)
+				(keyword
+					(push-frame (eval-tail next args))
+					(evaluate tail env)
+				)
+				(t (funcall next))
 			)
 		)
 	)
