@@ -67,6 +67,8 @@
 )
 (in-package :abyss/ground)
 
+(declaim (type abyss/environment::environment +ground-env+))
+
 (defvar +ground-env+
 	(let* ((env (make-environment nil)) (table (env-table env)))
 		(setf (gethash :std-environment table) (make-app

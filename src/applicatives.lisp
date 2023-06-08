@@ -107,6 +107,9 @@
 	)
 )
 
+(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+	current-env-impl))
+
 (defun current-env-impl (args)
 	(bind-params args (env)
 		(normal-pass env)

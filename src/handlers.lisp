@@ -52,6 +52,9 @@
 )
 (in-package :abyss/handlers)
 
+(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+	resume/call-impl resume/call+h-impl handler-impl handler/s-impl with-impl))
+
 (defun eff-p-impl (args)
 	(type-pred-body args x (effect-p x))
 )

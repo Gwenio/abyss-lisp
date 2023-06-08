@@ -35,6 +35,7 @@
 	)
 	(parent nil
 		:read-only t
+		:type (or environment null)
 	)
 )
 

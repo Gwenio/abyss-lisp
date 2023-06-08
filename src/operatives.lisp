@@ -46,24 +46,28 @@
 	seq-aux))
 
 (defun seq-aux (env next)
-		(lambda (_)
-			(declare (ignore _))
-			(let ((head (car next)) (tail (cdr next)))
-				(typecase tail
-					(cons (push-frame (seq-aux env tail)))
-					(null nil)
-					(t (push-frame (bad-tail tail)))
-				)
-				(evaluate head env)
+	(lambda (_)
+		(declare (ignore _))
+		(let ((head (first next)) (tail (cdr next)))
+			(typecase tail
+				(cons (push-frame (seq-aux env tail)))
+				(null nil)
+				(t (push-frame (bad-tail tail)))
 			)
+			(evaluate head env)
 		)
+	)
 )
+
+(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+	seq-impl define-impl vau-impl lambda-impl if-impl cond-impl
+	let-impl let*-impl letrec-impl letrec*-impl))
 
 (defun seq-impl (args)
 	(let ((body (cdr args)))
 		(typecase body
 			(cons
-				(funcall (seq-aux (car args) body) nil)
+				(funcall (seq-aux (first args) body) nil)
 			)
 			(null (normal-pass +inert+))
 			(t (recover-exn (make-improper-list body +inert+)))
@@ -81,7 +85,7 @@
 				(advance ()
 					'(if pending
 						(let ((next (pop pending)))
-							(setf binding (car next))
+							(setf binding (first next))
 							(impl (cdr next))
 						)
 						(normal-pass +inert+)
@@ -92,8 +96,8 @@
 						(if (consp x)
 							(progn
 								(push (cons (cdr binding) (cdr x)) pending)
-								(setf binding (car binding))
-								(impl (car x))
+								(setf binding (first binding))
+								(impl (first x))
 							)
 							(throw-exn (make-arg-pair x))
 						)
@@ -158,7 +162,7 @@
 				(cons
 					(normal-pass
 						(make-closure
-							(make-environment env)
+							env
 							(cons eformal bindings)
 							body))
 				)
@@ -178,7 +182,7 @@
 			(cons
 				(normal-pass (make-app
 					(make-closure
-						(make-environment env)
+						env
 						(cons +ignore+ bindings)
 						body)))
 			)
@@ -189,6 +193,9 @@
 		)
 	)
 )
+
+(declaim (ftype (function (abyss/environment::environment t t) t)
+	if-aux cond-aux))
 
 (defun if-aux (env then else)
 	(lambda (result)
@@ -216,25 +223,27 @@
 )
 
 (defun cond-impl (args)
-	(let ((env (car args)) (clauses (cdr args)))
-		(cond
-			((consp clauses)
-				(let ((head (car clauses)))
+	(let ((env (first args)) (clauses (cdr args)))
+		(typecase clauses
+			(cons
+				(let ((head (first clauses)))
 					(if (consp head)
 						(progn
 							(push-frame
 								(cond-aux env (cdr head) (cdr clauses)))
-							(evaluate (car head) env)
+							(evaluate (first head) env)
 						)
 						(throw-exn (make-arg-pair head))
 					)
 				)
 			)
-			((null clauses) (normal-pass +inert+))
+			(null (normal-pass +inert+))
 			(t (recover-exn (make-improper-list clauses +inert+)))
 		)
 	)
 )
+
+(declaim (ftype (function (hash-table t) abyss/types::applicative) let-aux))
 
 (defun let-aux (table bindings)
 	(make-app (lambda (args)
@@ -257,7 +266,7 @@
 					else unless (null (cddr x))
 					do (error 'type-error :datum (cddr x) :expected-type 'null)
 					end
-					collect (car x) into y
+					collect (first x) into y
 					collect (second x) into z
 					finally (return (cons (let-aux (env-table env) y) z))
 				)
@@ -280,7 +289,7 @@
 			(cons
 				(,basic (list
 					parent-env
-					(list (car bindings))
+					(list (first bindings))
 					(list* (function ,iterative) (cdr bindings) body)
 				))
 			)

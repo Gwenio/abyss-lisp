@@ -87,6 +87,9 @@
 (declaim (ftype (function (abyss/environment::environment t) function)
 	and-oper-aux or-oper-aux))
 
+(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+	and-oper-impl or-oper-impl))
+
 (defun and-oper-aux (env next)
 	(if next
 		(labels ((impl (prev)

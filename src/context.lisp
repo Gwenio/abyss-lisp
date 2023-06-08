@@ -32,6 +32,7 @@
 	(context
 		(:conc-name ctx-)
 		(:constructor make-context (pending))
+		(:constructor make-init-context (&aux pending))
 	)
 	"Interpreter evaluation context."
 	; `frames` represents a call stack.
@@ -45,16 +46,20 @@
 	; a new vector when `vector-push` fails.
 	;
 	; the closures take a context and an accumulator as parameters
-	(frames)
+	(frames nil :type list)
 	; `pending` points to the context to switch to if `frames` is emptied.
-	(pending)
+	(pending nil
+		:type context
+	)
 	; `handler` passed an effect and returns a function to call on the
 	; target context
 	; `nil` is passed for a 'normal' return
 	(handler #'null-handler :type function)
 	; `guards` is a list of closures to call if the context is discarded
-	(guards)
+	(guards nil :type list)
 )
+
+(declaim (type context *current-ctx*))
 
 (defvar *current-ctx*)
 
@@ -165,7 +170,7 @@
 
 (defun initial-context (run fallback)
 	"Creates an initial context. `fallback` is expected to raise an error."
-	(let ((*current-ctx* (make-context ())))
+	(let ((*current-ctx* (make-init-context)))
 		(fresh-context run fallback)
 	)
 )
@@ -222,7 +227,9 @@
 		(:conc-name cont-)
 		(:constructor make-continuation (ctx handler)))
 	; the context to resume, `nil` if invalidated
-	(ctx)
+	(ctx (error "continuation needs `ctx`")
+		:type (or context null)
+	)
 	; the handler to set when resumed
 	(handler #'null-handler :type function)
 )
@@ -281,12 +288,14 @@
 	)
 )
 
+(declaim (ftype (function (t continuation) t) resume-cont))
 ; deep handler
 (defun resume-cont (x cont)
 	"Resumes a continuation if it is valid."
 	(resume-cont-body cont (cont-handler cont) (normal-pass x))
 )
 
+(declaim (ftype (function (t continuation function) t) resume-cont/h))
 ; shallow handler support
 (defun resume-cont/h (x cont handler)
 	"Like `resume-cont`, but also sets a new handler."

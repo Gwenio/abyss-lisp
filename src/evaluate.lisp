@@ -118,8 +118,6 @@
 	"Unwraps applicatives for combination."
 	(let ((next
 		(let ((combiner (app-comb app)))
-			(declare (type (or function abyss/types::applicative)
-				combiner))
 			(if (functionp combiner)
 				(lambda () (funcall combiner args))
 				(lambda () (combine combiner env args))

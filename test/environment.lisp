@@ -13,8 +13,8 @@
 (test env-make
 	(is (environment-p (make-environment nil)))
 	(is (environment-p
-		(make-environment (list
-			(make-environment nil)))))
+		(make-environment
+			(make-environment nil))))
 )
 
 (test env-simple

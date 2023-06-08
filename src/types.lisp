@@ -52,6 +52,7 @@
 	)
 	(comb (error "`applicative` requires a combiner.")
 		:read-only t
+		:type (or applicative function)
 	)
 )
 
