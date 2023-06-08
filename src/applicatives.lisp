@@ -23,7 +23,7 @@
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
-		:make-type-exn :make-invalid-comb
+		:make-type-exn
 	)
 	(:import-from :abyss/environment
 		:make-environment :environment-p
@@ -57,7 +57,7 @@
 	(bind-params args (nil x)
 		(if (or (functionp x) (applicative-p x))
 			(normal-pass (make-app x))
-			(throw-exn (make-invalid-comb x))
+			(throw-exn (make-type-exn x 'combiner))
 		)
 	)
 )
