@@ -74,12 +74,13 @@ int main(int const argc, char const *const *argv)
 	}
 	*buffer.rbegin() = '\x00';
 	scanner lex{scanner::buffer_t{buffer.cbegin(), buffer.cend() - 1}};
-	while (!lex.done()) {
+	for (std::size_t count = 0; count <= buffer.size(); count++) {
 		auto const [src, found] = lex.next();
 		switch (found) {
 			ABYSS_LEX_TOKENS(PRINT_TOKEN)
 		}
 		if (found == id::eoi) { return 0; }
 	}
+	cout << "Error: got more tokens than input bytes." << endl;
 	return 1;
 }
