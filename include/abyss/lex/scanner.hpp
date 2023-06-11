@@ -40,6 +40,7 @@ public:
 		pos_t start{cursor};
 		token::id id{next_impl()};
 		std::size_t length = static_cast<std::size_t>(cursor - start);
+		assert(length > 0);
 		return {buffer_t{start, length}, id};
 	}
 
