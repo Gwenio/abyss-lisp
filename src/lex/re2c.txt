@@ -1,0 +1,97 @@
+
+// ISC License (ISC)
+//
+// Copyright 2023 James Adam Armstrong
+//
+// Permission to use, copy, modify, and/or distribute this software for any
+// purpose with or without fee is hereby granted, provided that the above copyright
+// notice and this permission notice appear in all copies.
+//
+// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+// REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+// FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+// INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+// LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+// OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+// PERFORMANCE OF THIS SOFTWARE.
+
+#include <abyss/lex/tokens.hpp>
+#include <abyss/lex/scanner.hpp>
+
+token::id scanner::next_impl() noexcept {
+	pos_t saved;
+	using token::id;
+    /*!re2c
+		re2c:api = custom;
+		re2c:api:style = free-form;
+		re2c:yyfill:enable = 0;
+		re2c:eof = 0;
+
+		re2c:define:YYCTYPE = char8_t;
+
+		re2c:define:YYPEEK       = "peek()";
+		re2c:define:YYSKIP       = "cursor++;";
+		re2c:define:YYSHIFT      = "cursor += @@{shift};";
+		re2c:define:YYBACKUP     = "saved = cursor;";
+		re2c:define:YYRESTORE    = "cursor = saved;";
+		re2c:define:YYLESSTHAN   = "remaining(@@{len})";
+
+		bin_int = ([']?[01])*;
+		oct_int = ([']?[0-7])*;
+		dec_int = ([']?[0-9])*;
+		hex_int = ([']?[0-9A-Fa-f])*;
+
+		digit_seq = [0-9]dec_int;
+		hex_seq = [0-9A-Fa-f]hex_int;
+		exponent = 'p'[+\-]?digit_seq;
+
+		sbody = ([ -~]\[\\"])|("\\"[ -~]);
+
+		symbol_head = [$?!=\-+|^<>:/*&%A-Za-z~];
+		symbol_tail = ([^\x00- \\'"#.,()\x7f-\xff]|("."[^\x00- \\'",#()\x7f-\xff]))*;
+
+		$ { return id::eoi; }
+		"." { return id::dot; }
+		"(" { return id::lparen; }
+		")" { return id::rparen; }
+
+		[ \t]+ { return id::whitespace; }
+		[\r]? [\n] { return id::newline; }
+		";"[\t -~]* { return id::line_comment; }
+		"\\"([\t -~])*"\\" { return id::inline_comment; }
+		"\\"([\t -~]\[\\])* { return id::invalid_inline_comment; }
+
+		"#null" { return id::null; }
+		"#ignore" { return id::ignore; }
+		"#inert" { return id::inert; }
+		"#ret" { return id::ret; }
+		"#exn" { return id::exn; }
+		"#fix" { return id::fix; }
+		'#f'|"#false" { return id::false_; }
+		'#t'|"#true" { return id::true_; }
+
+		["] (([ -~]\[\\"])|("\\"[ -~]))* ["] { return id::string; }
+		['] (([ -~]\[\\'])|("\\"[ -~]))* ['] { return id::string; }
+		["] (([ -~]\[\\"])|("\\"[ -~]))* { return id::invalid_string; }
+		['] (([ -~]\[\\'])|("\\"[ -~]))* { return id::invalid_string; }
+
+		"0"|("-"?[1-9] dec_int) { return id::int_dec; }
+		'#x' [+\-] [0-9A-Fa-f] hex_int { return id::int_hex; }
+		'#b' [+\-]  [01] bin_int { return id::int_bin; }
+		'#o' [+\-]  [0-7] oct_int { return id::int_oct; }
+
+		symbol_head symbol_tail { return id::symbol; }
+		"_" (symbol_head symbol_tail)? { return id::ignore; }
+		"__" symbol_tail { return id::invalid_ignore; }
+		"_"? symbol_head symbol_tail "." { return id::invalid_trailing_dot; }
+		"_." { return id::invalid_trailing_dot; }
+
+		"#" [^\x00- '"\\;#()\xff]* { return id::reserved; }
+
+		[`{}[\],@] { return id::reserved; }
+		[\r] { return id::invalid_cr; }
+		[\x00] { return id::invalid_null; }
+		[^\t\n\r -~] [^\x00\t\n\r -~]* { return id::invalid_input; }
+		* { static_assert(false, "Non-exhaustive re2c definitions."); }
+    */
+}

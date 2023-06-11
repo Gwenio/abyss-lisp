@@ -33,3 +33,38 @@ charset = utf-8
 indent_style = tab
 indent_size = 4
 
+[*.hpp]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+
+[*.cpp]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+
+[*.h]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+
+[*.c]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+
+[CMakeLists.txt]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+
+[.clang-format]
+charset = utf-8
+indent_style = space
+indent_size = 2
+
+[.clangd]
+charset = utf-8
+indent_style = space
+indent_size = 2
+
