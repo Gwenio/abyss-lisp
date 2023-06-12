@@ -28,14 +28,31 @@ using token::id;
 using std::cout;
 using std::endl;
 
-void print_source(std::string_view type, auto offset, auto length)
+std::string_view match_type(id x) noexcept
 {
-	cout << type << " @ " << offset << " + " << length << endl;
+	using token::match;
+	switch (token::flags(x)) {
+	case match::atom:
+		return {"atom"};
+	case match::punct:
+		return {"punct"};
+	case match::omit:
+		return {"omit"};
+	case match::invalid:
+		return {"invalid"};
+	}
 }
 
-#define PRINT_TOKEN(type, _unused)                                   \
-	case id::type:                                                   \
-		print_source(#type, src.data() - buffer.data(), src.size()); \
+void print_source(
+	id x, std::string_view type, std::vector<char8_t> const &buffer, std::span<char8_t const> src)
+{
+	cout << match_type(x) << " : " << type << " @ " << src.data() - buffer.data() << " + "
+		 << src.size() << endl;
+}
+
+#define PRINT_TOKEN(type, _unused)               \
+	case id::type:                               \
+		print_source(found, #type, buffer, src); \
 		break;
 
 int main(int const argc, char const *const *argv)
@@ -45,13 +62,10 @@ int main(int const argc, char const *const *argv)
 		return -1;
 	}
 	std::string_view const filename{argv[1]};
-	fs::path file_path{filename};
-	while (fs::is_symlink(file_path)) {
-		file_path = fs::read_symlink(file_path);
-	}
 	std::vector<char8_t> buffer;
 	{
 		FILE *source = std::fopen(filename.data(), "r");
+		fs::path file_path{filename};
 		if (!source) {
 			cout << "Failed to open file: " << filename << endl;
 			if (!fs::is_regular_file(file_path)) {
@@ -73,7 +87,7 @@ int main(int const argc, char const *const *argv)
 		std::fclose(source);
 	}
 	*buffer.rbegin() = '\x00';
-	scanner lex{scanner::buffer_t{buffer.cbegin(), buffer.cend() - 1}};
+	scanner lex{scanner::buffer_t{buffer.cbegin(), buffer.size()}};
 	for (std::size_t count = 0; count <= buffer.size(); count++) {
 		auto const [src, found] = lex.next();
 		switch (found) {
