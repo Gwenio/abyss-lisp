@@ -37,5 +37,12 @@ add_executable(abyss-lex)
 target_sources(abyss-lex PRIVATE
 	src/lex/cli.cpp
 	src/lex/re2c.cpp
+)
+
+add_executable(abyss-parse)
+target_sources(abyss-parse PRIVATE
+	src/parse/cli.cpp
+	src/lex/re2c.cpp
 	src/lex/tokenize.cpp
+	src/parse/parse.cpp
 )

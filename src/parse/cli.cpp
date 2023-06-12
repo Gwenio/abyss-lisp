@@ -15,12 +15,15 @@
 // OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <abyss/parse/nodes.hpp>
+#include <abyss/parse/parse.hpp>
 #include <abyss/lex/tokens.hpp>
-#include <abyss/lex/scanner.hpp>
-#include <cstdio>
+#include <abyss/lex/tokenize.hpp>
 #include <string_view>
 #include <filesystem>
 #include <iostream>
+#include <fstream>
+#include <tuple>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -44,16 +47,16 @@ std::string_view match_type(id x) noexcept
 	return {"unknown"};
 }
 
-void print_source(
-	id x, std::string_view type, std::vector<char8_t> const &buffer, std::span<char8_t const> src)
+void print_source(id x, std::string_view type, std::vector<char8_t> const &buffer,
+	std::span<char8_t const> src, std::size_t line)
 {
 	cout << match_type(x) << " : " << type << " @ " << src.data() - buffer.data() << " + "
-		 << src.size() << endl;
+		 << src.size() << " on line " << line + 1 << endl;
 }
 
-#define PRINT_TOKEN(type, _unused)               \
-	case id::type:                               \
-		print_source(found, #type, buffer, src); \
+#define PRINT_TOKEN(type, _unused)                                       \
+	case id::type:                                                       \
+		print_source(id::type, #type, buffer, token_src[x], line_count); \
 		break;
 
 int main(int const argc, char const *const *argv)
@@ -88,14 +91,43 @@ int main(int const argc, char const *const *argv)
 		std::fclose(source);
 	}
 	*buffer.rbegin() = '\x00';
-	scanner lex{scanner::buffer_t{buffer.cbegin(), buffer.size()}};
-	for (std::size_t count = 0; count <= buffer.size(); count++) {
-		auto const [src, found] = lex.next();
-		switch (found) {
-			ABYSS_LEX_TOKENS(PRINT_TOKEN)
+	auto [token_id, token_src, lines, success] = token::process(buffer);
+	assert(token_id.size() == token_src.size());
+	for (std::size_t x = 0, line_count = 0; x < token_id.size(); x++) {
+		while (lines[line_count] < token_src[x].begin()) {
+			++line_count;
 		}
-		if (found == id::eoi) { return 0; }
+		switch (token_id[x]) {
+			ABYSS_LEX_TOKENS(PRINT_TOKEN);
+		}
 	}
-	cout << "Error: got more tokens than input bytes." << endl;
-	return 1;
+	if (!success) {
+		cout << "Tokenization failed. Skip parsing." << endl;
+		return 1;
+	}
+	auto [nodes, indices, unmatched, cursor] = parser::parse(token_id);
+	cout << endl << "Parse Metrics: " << endl;
+	cout << "-\tNodes " << nodes.size() << endl;
+	cout << "-\tIndices " << indices.size() << endl;
+	cout << "-\tUnmatched '(' " << unmatched << endl;
+	cout << "-\tFinal offset " << cursor << " / " << token_id.size() - 1 << endl;
+	if (nodes.back() == parser::node::eoi) {
+		cout << "-\tParsing succeeded" << endl << endl;
+	} else {
+		cout << "-\tParsing failed" << endl << endl;
+	}
+
+#define PRINT_NODE(type)     \
+	case parser::node::type: \
+		cout << #type;       \
+		break;
+
+	assert(nodes.size() == indices.size());
+	for (std::size_t x = 0; x < nodes.size(); x++) {
+		switch (nodes[x]) {
+			ABYSS_PARSE_NODES(PRINT_NODE);
+		}
+		cout << " @ " << indices[x] << endl;
+	}
+	return 0;
 }
