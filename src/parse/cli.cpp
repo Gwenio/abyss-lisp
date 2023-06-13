@@ -110,7 +110,7 @@ int main(int const argc, char const *const *argv)
 	cout << "-\tNodes " << nodes.size() << endl;
 	cout << "-\tIndices " << indices.size() << endl;
 	cout << "-\tUnmatched '(' " << unmatched << endl;
-	cout << "-\tFinal offset " << cursor << " / " << token_id.size() - 1 << endl;
+	cout << "-\tFinal offset " << cursor + 1 << " / " << token_id.size() << endl;
 	if (nodes.back() == parser::node::eoi) {
 		cout << "-\tParsing succeeded" << endl << endl;
 	} else {
