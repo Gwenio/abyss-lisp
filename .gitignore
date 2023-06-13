@@ -2,3 +2,5 @@
 !.vscode/extensions.json
 build/
 src/lex/re2c.cpp
+src/ffi/tokens.lisp
+src/ffi/nodes.lisp

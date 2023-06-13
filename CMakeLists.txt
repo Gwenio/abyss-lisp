@@ -46,3 +46,8 @@ target_sources(abyss-parse PRIVATE
 	src/lex/tokenize.cpp
 	src/parse/parse.cpp
 )
+
+add_executable(abyss-ffi-enum-gen)
+target_sources(abyss-ffi-enum-gen PRIVATE
+	src/ffi/enum-gen.cpp
+)
