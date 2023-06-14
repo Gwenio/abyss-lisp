@@ -47,8 +47,9 @@ token::id scanner::next_impl() noexcept {
 
 		sbody = ([ -~]\[\\"])|("\\"[ -~]);
 
-		symbol_head = [$?!=\-+|^<>:/*&%A-Za-z~];
-		symbol_tail = ([^\x00- \\'"#.,()\x7f-\xff]|("."[^\x00- \\'",#()\x7f-\xff]))*;
+		symbol_head = [$?!=\-+|^<>/*&%A-Za-z~];
+		symbol_body = [^\x00- \\'"#.,:;()[\]{}\x7f-\xff];
+		symbol_tail = (symbol_body|([.:,#[\]{}]*symbol_body))*;
 
 		$ { cursor++; return id::eoi; }
 		"." { return id::dot; }
@@ -88,7 +89,7 @@ token::id scanner::next_impl() noexcept {
 
 		"#" [^\x00- '"\\;#()\xff]* { return id::reserved; }
 
-		[`{}[\],@] { return id::reserved; }
+		[`{}[\],@:] { return id::reserved; }
 		[\r] { return id::invalid_cr; }
 		[\x00] { return id::invalid_null; }
 		[^\t\n\r -~] [^\x00\t\n\r -~]* { return id::invalid_input; }
