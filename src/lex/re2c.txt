@@ -18,6 +18,13 @@
 #include <abyss/lex/tokens.hpp>
 #include <abyss/lex/scanner.hpp>
 
+// For debugging, eoi needs the cursor incremented
+#ifdef NDEBUG
+#define ABYSS_LEX_INC_EOI
+#else
+#define ABYSS_LEX_INC_EOI cursor++
+#endif
+
 token::id scanner::next_impl() noexcept {
 	pos_t saved;
 	using token::id;
@@ -51,7 +58,7 @@ token::id scanner::next_impl() noexcept {
 		symbol_body = [^\x00- \\'"#.,:;()[\]{}\x7f-\xff];
 		symbol_tail = (symbol_body|([.:,#[\]{}]*symbol_body))*;
 
-		$ { cursor++; return id::eoi; }
+		$ { ABYSS_LEX_INC_EOI; return id::eoi; }
 		"." { return id::dot; }
 		"(" { return id::lparen; }
 		")" { return id::rparen; }

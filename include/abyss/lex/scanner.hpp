@@ -36,15 +36,13 @@ public:
 
 	std::tuple<buffer_t, token::id> next() noexcept
 	{
-		assert(!done());
+		assert(!remaining(0));
 		pos_t start{cursor};
 		token::id id{next_impl()};
 		std::size_t length = static_cast<std::size_t>(cursor - start);
 		assert(length > 0);
 		return {buffer_t{start, length}, id};
 	}
-
-	bool done() const noexcept { return cursor >= input.end(); }
 
 private:
 	buffer_t const input;
