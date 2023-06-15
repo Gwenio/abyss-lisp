@@ -1,26 +1,31 @@
 
 #-asdf3.1 (error "ASDF 3.1+ required")
-(defsystem "abyss"
+(defsystem :abyss
 	:name "Abyss Lisp"
 	:version (:read-file-form "version.sexp")
 	:description "A prototype of a Lisp dialect."
 	:class :package-inferred-system
-	:depends-on (:uiop)
+	:depends-on (:uiop :cffi)
 	:pathname "src/"
 	:components (
-		(:file "types")
-		(:file "error")
-		(:file "context")
-		(:file "environment")
-		(:file "evaluate")
-		(:file "helpers")
-		(:file "operatives")
-		(:file "applicatives")
-		(:file "boole")
-		(:file "numbers")
-		(:file "lists")
-		(:file "handlers")
-		(:file "ground")
+		(module "core" :components (
+			(:file "types")
+			(:file "error")
+			(:file "context")
+			(:file "environment")
+			(:file "evaluate")
+			(:file "helpers")
+			(:file "operatives")
+			(:file "applicatives")
+			(:file "boole")
+			(:file "numbers")
+			(:file "lists")
+			(:file "handlers")
+			(:file "ground")
+		))
+		(:module "ffi" :components (
+			(:file "enums")
+		))
 	)
 	:author "James Adam Armstrong"
 	;:maintainer ""
