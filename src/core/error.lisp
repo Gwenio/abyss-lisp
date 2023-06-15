@@ -53,6 +53,7 @@
 	)
 	(obj)
 )
+
 (defstruct
 	(improper-list-exn
 		(:constructor make-improper-list (tail result))

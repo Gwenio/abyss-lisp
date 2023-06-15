@@ -34,7 +34,7 @@
 		:evaluate
 	)
 	(:import-from :abyss/helpers
-		:bad-tail :bind-params :boole-branch
+		:bad-tail :bind-params :boole-branch :destructure
 	)
 	(:export :seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
 		:let-impl :let*-impl :letrec-impl :letrec*-impl
@@ -75,63 +75,9 @@
 	)
 )
 
-(declaim (ftype (function (hash-table t) function) define-aux))
-
-(defun define-aux (table binding)
-	(let ((pending nil) (used (make-hash-table :test 'eq)))
-		(labels (
-			(impl (x)
-				(macrolet (
-				(advance ()
-					'(if pending
-						(let ((next (pop pending)))
-							(setf binding (first next))
-							(impl (cdr next))
-						)
-						(normal-pass +inert+)
-					)
-				))
-				(typecase binding
-					(cons
-						(if (consp x)
-							(progn
-								(push (cons (cdr binding) (cdr x)) pending)
-								(setf binding (first binding))
-								(impl (first x))
-							)
-							(throw-exn (make-arg-pair x))
-						)
-					)
-					(null
-						(if (null x)
-							(advance)
-							(throw-exn (make-arg-null x))
-						)
-					)
-					(keyword
-						(if (gethash binding used)
-							(throw-exn (make-arg-repeat x))
-							(progn
-								(setf (gethash binding table) x)
-								(setf (gethash binding used) t)
-								(advance)
-							)
-						)
-					)
-					(abyss/types::ignore-type
-						(advance)
-					)
-					(t (throw-exn (make-bad-param binding)))
-				))
-			))
-			#'impl
-		)
-	)
-)
-
 (defun define-impl (args)
 	(bind-params args (env bindings x)
-		(push-frame (define-aux (env-table env) bindings))
+		(push-frame (destructure (env-table env) bindings))
 		(evaluate x env)
 	)
 )
@@ -144,7 +90,7 @@
 		(let ((local-env (make-environment static-env)))
 			(push-frame (seq-aux local-env body))
 			(funcall
-				(define-aux (env-table local-env) formal-params)
+				(destructure (env-table local-env) formal-params)
 				args)
 		)
 	)
@@ -247,7 +193,7 @@
 
 (defun let-aux (table bindings)
 	(make-app (lambda (args)
-		(funcall (define-aux table bindings) (cdr args))
+		(funcall (destructure table bindings) (cdr args))
 	))
 )
 

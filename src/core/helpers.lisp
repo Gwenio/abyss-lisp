@@ -18,15 +18,18 @@
 (uiop:define-package :abyss/helpers
 	(:use :cl)
 	(:import-from :abyss/types
-		:+true+ :+false+
+		:+true+ :+false+ :+inert+
 	)
 	(:import-from :abyss/error
 		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
+		:make-arg-repeat :make-bad-param
 	)
 	(:import-from :abyss/context
 		:normal-pass :throw-exn :recover-exn
 	)
-	(:export :bad-tail :bind-params :boole-branch :type-pred-body)
+	(:export :bad-tail :bind-params :boole-branch :type-pred-body
+		:destructure :destructure/val
+	)
 )
 (in-package :abyss/helpers)
 
@@ -65,7 +68,7 @@
 			`(let (,(list env `(car ,args)))
 				,(impl `(cdr ,args) params)
 			)
-			`(progn (pop ,args) ,(impl args params))
+			(impl `(cdr ,args) params)
 		)
 	)
 )
@@ -85,4 +88,68 @@
 			+false+
 		))
 	)
+)
+
+(defmacro destructure-body (table binding ret)
+	`(let ((pending nil) (used (make-hash-table :test 'eq)))
+		(labels (
+			(impl (x)
+				(macrolet (
+				(advance ()
+					'(if pending
+						(let ((next (pop pending)))
+							(setf ,binding (first next))
+							(impl (cdr next))
+						)
+						(normal-pass ,ret)
+					)
+				))
+				(typecase ,binding
+					(cons
+						(if (consp x)
+							(progn
+								(push (cons (cdr ,binding) (cdr x)) pending)
+								(setf ,binding (first ,binding))
+								(impl (first x))
+							)
+							(throw-exn (make-arg-pair x))
+						)
+					)
+					(null
+						(if (null x)
+							(advance)
+							(throw-exn (make-arg-null x))
+						)
+					)
+					(keyword
+						(if (gethash ,binding used)
+							(throw-exn (make-arg-repeat x))
+							(progn
+								(setf (gethash ,binding ,table) x)
+								(setf (gethash ,binding used) t)
+								(advance)
+							)
+						)
+					)
+					(abyss/types::ignore-type
+						(advance)
+					)
+					(t (throw-exn (make-bad-param ,binding)))
+				))
+			))
+			#'impl
+		)
+	)
+)
+
+(declaim (ftype (function (hash-table t) function) destructure))
+
+(defun destructure (table binding)
+	(destructure-body table binding +inert+)
+)
+
+(declaim (ftype (function (hash-table t t) function) destructure/val))
+
+(defun destructure/val (table binding ret)
+	(destructure-body table binding ret)
 )

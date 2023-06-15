@@ -39,7 +39,7 @@
 		:evaluate
 	)
 	(:import-from :abyss/helpers
-		:bind-params :type-pred-body
+		:bind-params :type-pred-body :destructure
 	)
 	(:import-from :abyss/operatives
 		:seq-impl
@@ -255,7 +255,7 @@
 		(let ((child (make-environment env)))
 			(push-frame (abyss/operatives::seq-aux child body))
 			(funcall
-				(abyss/operatives::define-aux (env-table child) params)
+				(destructure (env-table child) params)
 				args)
 		)
 	)
@@ -270,14 +270,12 @@
 					(normal-pass (make-app (lambda (x)
 						(push-frame (abyss/operatives::seq-aux child body))
 						(funcall
-							(abyss/operatives::define-aux
-								(env-table child)
-								init)
+							(destructure (env-table child) init)
 							(cdr x))
 					)))
 				))
 				(funcall
-					(abyss/operatives::define-aux (env-table child) params)
+					(destructure (env-table child) params)
 					args)
 			)
 		)
