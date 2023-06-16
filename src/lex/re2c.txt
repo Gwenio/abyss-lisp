@@ -72,9 +72,6 @@ token::id scanner::next_impl() noexcept {
 		"#null" { return id::null; }
 		"#ignore" { return id::ignore; }
 		"#inert" { return id::inert; }
-		"#ret" { return id::ret; }
-		"#exn" { return id::exn; }
-		"#fix" { return id::fix; }
 		'#f'|"#false" { return id::false_; }
 		'#t'|"#true" { return id::true_; }
 

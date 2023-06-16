@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/ground
 	(:use :cl)
 	(:import-from :abyss/types
-		:make-app
+		:make-app :+eff-ret+ :+eff-exn+ :+eff-fix+
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -122,6 +122,9 @@
 				`(:$handler ,#'handler-impl)
 				`(:$handler/state ,#'handler/s-impl)
 				`(:$with ,#'with-impl)
+				`(:ret ,+eff-ret+)
+				`(:exn ,+eff-exn+)
+				`(:fix ,+eff-fix+)
 				; boole
 				`(:boole? ,(make-app #'boole-p-impl))
 				`(:not? ,(make-app #'not-impl))

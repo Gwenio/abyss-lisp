@@ -39,9 +39,6 @@ enum class match : type
 	X(ignore, atom)              \
 	X(true_, atom)               \
 	X(false_, atom)              \
-	X(ret, atom)                 \
-	X(exn, atom)                 \
-	X(fix, atom)                 \
 	X(symbol, atom)              \
 	X(string, atom)              \
 	X(int_dec, atom)             \
