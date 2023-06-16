@@ -21,6 +21,7 @@
 		:boole-type-p :inert-p :ignore-p :applicative-p
 		:make-effect :effect-p :effect-name :effect-resumable
 		:make-app :app-comb :applicative
+		:make-record :record-p :record-obj
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 	)
 )
@@ -62,6 +63,16 @@
 	)
 	(name t :read-only t)
 	(resumable t :read-only t)
+)
+
+(defstruct
+	(record
+		(:constructor make-record ())
+	)
+	(obj (make-hash-table :test 'eq)
+		:type hash-table
+		:read-only t
+	)
 )
 
 (defvar +inert+ (make-inert-type))

@@ -61,6 +61,9 @@
 		:first-impl :second-impl :third-impl :nth-impl
 		:tail-impl :nth-tail-impl :last-impl :last-n-impl
 	)
+	(:import-from :abyss/record
+		:record-p-impl :record-impl :record-set-impl
+	)
 	(:export
 		:ground-env :extend-ground :extend-ground-app
 	)
@@ -162,6 +165,10 @@
 				`(:nth-tail ,(make-app #'nth-tail-impl))
 				`(:last ,(make-app #'last-impl))
 				`(:last-n ,(make-app #'last-n-impl))
+				; records
+				`(:record? ,(make-app #'record-p-impl))
+				`(:$record ,#'record-impl)
+				`(:$record! ,#'record-set-impl)
 			))
 		env
 	)

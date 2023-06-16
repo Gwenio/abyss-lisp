@@ -21,7 +21,7 @@
 		:env-lookup
 	)
 	(:import-from :abyss/types
-		:app-comb :applicative-p
+		:app-comb :applicative-p :record-p :record-obj
 	)
 	(:import-from :abyss/error
 		:make-invalid-comb :make-sym-not-found
@@ -51,9 +51,39 @@
 		)
 		(cons
 			(push-frame (precombine env (cons env (cdr x))))
-			(evaluate (car x) env)
+			(evaluate (first x) env)
 		)
 		(t (normal-pass x))
+	)
+)
+
+(declaim (ftype (function (abyss/types::record t) t) record-fetch))
+
+(declaim (ftype (function (abyss/types::record t) (function (t) t))
+	record-fetch-aux))
+
+(defun record-fetch-aux (rec args)
+	(lambda (x)
+		(push-frame (lambda (y) (normal-pass (cons x y))))
+		(record-fetch rec args)
+	)
+)
+
+(defun record-fetch (rec args)
+	(typecase args
+		(keyword
+			(multiple-value-bind (val found) (gethash args (record-obj rec))
+				(if found
+					(normal-pass val)
+					(recover-exn (make-sym-not-found args rec))
+				)
+			)
+		)
+		(cons
+			(push-frame (record-fetch-aux rec (cdr args)))
+			(record-fetch rec (first args))
+		)
+		(t (normal-pass args))
 	)
 )
 
@@ -70,6 +100,9 @@
 			)
 			(function
 				(funcall combiner args)
+			)
+			(abyss/types::record
+				(record-fetch combiner (cdr args))
 			)
 			; applicatives can only hold functions or applicatives
 			; so only at this point can an invalid combiner be encountered
@@ -99,7 +132,7 @@
 			(typecase next
 				(cons
 					(push-frame (eval-map env (cdr next) done fresh))
-					(evaluate (car next) env)
+					(evaluate (first next) env)
 				)
 				(keyword
 					(push-frame (eval-tail done fresh))
@@ -127,7 +160,7 @@
 			(typecase tail
 				(cons
 					(push-frame (eval-map env (cdr tail) next args))
-					(evaluate (car tail) env)
+					(evaluate (first tail) env)
 				)
 				(keyword
 					(push-frame (eval-tail next args))

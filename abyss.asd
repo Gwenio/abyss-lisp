@@ -21,6 +21,7 @@
 			(:file "numbers")
 			(:file "lists")
 			(:file "handlers")
+			(:file "record")
 			(:file "ground")
 		))
 		(:module "ffi" :components (
@@ -56,6 +57,7 @@
 		(:file "numbers")
 		(:file "lists")
 		(:file "handlers")
+		(:file "record")
 	)
 	:perform (test-op (o c)
 		(symbol-call :fiveam :run!
