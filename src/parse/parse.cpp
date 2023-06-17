@@ -78,7 +78,8 @@ result parse(std::span<token::id> input) noexcept
 #define ABYSS_PARSE_ERROR(type)  \
 	nodes.push_back(node::type); \
 	index.push_back(cursor);     \
-	return result{std::move(nodes), std::move(index), unmatched_lparens, cursor};
+	return result{               \
+		std::move(nodes), std::move(index), unmatched_lparens, cursor};
 
 initial:
 	++cursor;
@@ -102,7 +103,8 @@ start:
 	case id::eoi: // accept
 		nodes.push_back(node::eoi);
 		index.push_back(cursor);
-		return result{std::move(nodes), std::move(index), unmatched_lparens, cursor};
+		return result{
+			std::move(nodes), std::move(index), unmatched_lparens, cursor};
 	}
 head:
 	++cursor;

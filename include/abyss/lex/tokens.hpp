@@ -33,6 +33,7 @@ enum class match : type
 	invalid = 0b11000000,
 };
 
+// NOTE: Tokens that do not need their slice for processing go before symbol
 #define ABYSS_LEX_TOKENS_ATOM(X) \
 	X(null, atom)                \
 	X(inert, atom)               \
@@ -90,7 +91,8 @@ enum class raw_atom : type
 	raw_max,
 };
 
-static_assert(static_cast<type>(raw_atom::raw_max) <= static_cast<type>(match::punct));
+static_assert(
+	static_cast<type>(raw_atom::raw_max) <= static_cast<type>(match::punct));
 
 enum class raw_punct : type
 {
@@ -99,7 +101,8 @@ enum class raw_punct : type
 	raw_max,
 };
 
-static_assert(static_cast<type>(raw_punct::raw_max) <= static_cast<type>(match::punct));
+static_assert(
+	static_cast<type>(raw_punct::raw_max) <= static_cast<type>(match::punct));
 
 enum class raw_omit : type
 {
@@ -108,7 +111,8 @@ enum class raw_omit : type
 	raw_max,
 };
 
-static_assert(static_cast<type>(raw_omit::raw_max) <= static_cast<type>(match::punct));
+static_assert(
+	static_cast<type>(raw_omit::raw_max) <= static_cast<type>(match::punct));
 
 enum class raw_invalid : type
 {
@@ -117,7 +121,8 @@ enum class raw_invalid : type
 	raw_max,
 };
 
-static_assert(static_cast<type>(raw_invalid::raw_max) <= static_cast<type>(match::punct));
+static_assert(
+	static_cast<type>(raw_invalid::raw_max) <= static_cast<type>(match::punct));
 
 #undef ABYSS_LEX_TOKENS_RAW_ENUM
 
@@ -141,7 +146,8 @@ inline constexpr type operator|(raw_invalid x, match y) noexcept
 	return static_cast<type>(x) | static_cast<type>(y);
 }
 
-#define ABYSS_LEX_TOKENS_ENUM(name, flags) name = raw_##flags::name | match::flags,
+#define ABYSS_LEX_TOKENS_ENUM(name, flags) \
+	name = raw_##flags::name | match::flags,
 
 enum class id : type
 {
@@ -152,7 +158,8 @@ enum class id : type
 
 inline constexpr match flags(id x) noexcept
 {
-	return static_cast<match>(static_cast<type>(x) & static_cast<type>(match::invalid));
+	return static_cast<match>(
+		static_cast<type>(x) & static_cast<type>(match::invalid));
 }
 
 }

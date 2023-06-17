@@ -44,11 +44,11 @@ std::string_view match_type(id x) noexcept
 	return {"unknown"};
 }
 
-void print_source(
-	id x, std::string_view type, std::vector<char8_t> const &buffer, std::span<char8_t const> src)
+void print_source(id x, std::string_view type,
+	std::vector<char8_t> const &buffer, std::span<char8_t const> src)
 {
-	cout << match_type(x) << " : " << type << " @ " << src.data() - buffer.data() << " + "
-		 << src.size() << endl;
+	cout << match_type(x) << " : " << type << " @ "
+		 << src.data() - buffer.data() << " + " << src.size() << endl;
 }
 
 #define PRINT_TOKEN(type, _unused)               \
@@ -94,7 +94,9 @@ int main(int const argc, char const *const *argv)
 		switch (found) {
 			ABYSS_LEX_TOKENS(PRINT_TOKEN)
 		}
-		if (found == id::eoi) { return 0; }
+		if (found == id::eoi) {
+			return 0;
+		}
 	}
 	cout << "Error: got more tokens than input bytes." << endl;
 	return 1;

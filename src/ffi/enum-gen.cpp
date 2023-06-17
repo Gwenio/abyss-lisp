@@ -31,9 +31,12 @@ using std::endl;
 
 std::string process_name(std::string_view name)
 {
-	if (*name.rbegin() == '_') { name = name.substr(0, name.size() - 1); }
+	if (*name.rbegin() == '_') {
+		name = name.substr(0, name.size() - 1);
+	}
 	std::string temp{name};
-	for (auto x = temp.find('_', 0); x != std::string::npos; x = temp.find('_', x)) {
+	for (auto x = temp.find('_', 0); x != std::string::npos;
+		 x = temp.find('_', x)) {
 		temp[x] = '-';
 	}
 	return std::move(temp);
@@ -47,7 +50,8 @@ int main()
 	if (!file.is_open()) {
 		cout << "Failed to open file: " << filename << endl;
 		if (!fs::is_regular_file(file_path)) {
-			cout << "The target exists and was not a file: " << filename << endl;
+			cout << "The target exists and was not a file: " << filename
+				 << endl;
 			return 1;
 		}
 		return 1;
@@ -61,9 +65,9 @@ int main()
 	static_assert(std::is_same_v<token::type, std::uint8_t>);
 	file << "(defcenum (tokens :uint8)" << endl;
 
-#define PRINT_TOKEN(type, _unused)                                                            \
-	file << "\t(:" << process_name(#type) << " " << static_cast<std::size_t>(token::id::type) \
-		 << ")" << endl;
+#define PRINT_TOKEN(type, _unused)               \
+	file << "\t(:" << process_name(#type) << " " \
+		 << static_cast<std::size_t>(token::id::type) << ")" << endl;
 
 	ABYSS_LEX_TOKENS(PRINT_TOKEN);
 
@@ -71,9 +75,9 @@ int main()
 	static_assert(std::is_same_v<parser::type, std::uint8_t>);
 	file << "(defcenum (nodes :uint8)" << endl;
 
-#define PRINT_NODE(type)                                                                         \
-	file << "\t(:" << process_name(#type) << " " << static_cast<std::size_t>(parser::node::type) \
-		 << ")" << endl;
+#define PRINT_NODE(type)                         \
+	file << "\t(:" << process_name(#type) << " " \
+		 << static_cast<std::size_t>(parser::node::type) << ")" << endl;
 
 	ABYSS_PARSE_NODES(PRINT_NODE);
 

@@ -26,8 +26,8 @@
 
 namespace token {
 
-using results =
-	std::tuple<std::vector<id>, std::vector<scanner::buffer_t>, std::vector<scanner::pos_t>, bool>;
+using results = std::tuple<std::vector<id>, std::vector<scanner::buffer_t>,
+	std::vector<scanner::pos_t>, bool>;
 
 /**
  *	\brief Collects tokens from input text.

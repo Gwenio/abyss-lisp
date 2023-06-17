@@ -28,7 +28,8 @@
 
 namespace parser {
 
-using result = std::tuple<std::vector<node>, std::vector<std::size_t>, std::size_t, std::size_t>;
+using result = std::tuple<std::vector<node>, std::vector<std::size_t>,
+	std::size_t, std::size_t>;
 
 result parse(std::span<token::id> input) noexcept;
 

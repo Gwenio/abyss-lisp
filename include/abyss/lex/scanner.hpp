@@ -31,7 +31,9 @@ public:
 	using buffer_t = std::span<char8_t const>;
 	using pos_t = buffer_t::iterator;
 
-	constexpr scanner(buffer_t source) noexcept : input(source), cursor(input.begin()) {}
+	constexpr scanner(buffer_t source) noexcept :
+		input(source), cursor(input.begin())
+	{}
 	~scanner() noexcept = default;
 
 	std::tuple<buffer_t, token::id> next() noexcept
@@ -52,7 +54,10 @@ private:
 
 	char8_t peek() const noexcept { return *cursor; }
 
-	bool remaining(std::size_t count) const noexcept { return (cursor + count) >= input.end(); }
+	bool remaining(std::size_t count) const noexcept
+	{
+		return (cursor + count) >= input.end();
+	}
 };
 
 #endif

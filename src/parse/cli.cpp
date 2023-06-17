@@ -47,11 +47,13 @@ std::string_view match_type(id x) noexcept
 	return {"unknown"};
 }
 
-void print_source(id x, std::string_view type, std::vector<char8_t> const &buffer,
-	std::span<char8_t const> src, std::size_t line)
+void print_source(id x, std::string_view type,
+	std::vector<char8_t> const &buffer, std::span<char8_t const> src,
+	std::size_t line)
 {
-	cout << match_type(x) << " : " << type << " @ " << src.data() - buffer.data() << " + "
-		 << src.size() << " on line " << line + 1 << endl;
+	cout << match_type(x) << " : " << type << " @ "
+		 << src.data() - buffer.data() << " + " << src.size() << " on line "
+		 << line + 1 << endl;
 }
 
 #define PRINT_TOKEN(type, _unused)                                       \
@@ -110,7 +112,8 @@ int main(int const argc, char const *const *argv)
 	cout << "-\tNodes " << nodes.size() << endl;
 	cout << "-\tIndices " << indices.size() << endl;
 	cout << "-\tUnmatched '(' " << unmatched << endl;
-	cout << "-\tFinal offset " << cursor + 1 << " / " << token_id.size() << endl;
+	cout << "-\tFinal offset " << cursor + 1 << " / " << token_id.size()
+		 << endl;
 	if (nodes.back() == parser::node::eoi) {
 		cout << "-\tParsing succeeded" << endl << endl;
 	} else {
