@@ -51,3 +51,11 @@ add_executable(abyss-ffi-enum-gen)
 target_sources(abyss-ffi-enum-gen PRIVATE
 	src/ffi/enum-gen.cpp
 )
+
+add_library(abyss SHARED)
+target_sources(abyss PRIVATE
+	src/ffi/frontend.cpp
+	src/lex/re2c.cpp
+	src/lex/tokenize.cpp
+	src/parse/parse.cpp
+)
