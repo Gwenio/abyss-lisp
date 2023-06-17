@@ -93,7 +93,7 @@ int main(int const argc, char const *const *argv)
 		std::fclose(source);
 	}
 	*buffer.rbegin() = '\x00';
-	auto [token_id, token_src, lines, success] = token::process(buffer);
+	auto [token_id, token_src, lines] = token::process(buffer);
 	assert(token_id.size() == token_src.size());
 	for (std::size_t x = 0, line_count = 0; x < token_id.size(); x++) {
 		while (lines[line_count] < token_src[x].begin()) {
@@ -103,7 +103,7 @@ int main(int const argc, char const *const *argv)
 			ABYSS_LEX_TOKENS(PRINT_TOKEN);
 		}
 	}
-	if (!success) {
+	if (token_id.back() != id::eoi) {
 		cout << "Tokenization failed. Skip parsing." << endl;
 		return 1;
 	}

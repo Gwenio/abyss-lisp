@@ -132,9 +132,8 @@ loaded ABYSS_EXPORT abyss_load_file(
 			return loaded{nullptr, 2};
 		}
 	}
-	auto [token_id, token_src, lines, good] =
-		token::process({buffer.get(), size});
-	if (!good) {
+	auto [token_id, token_src, lines] = token::process({buffer.get(), size});
+	if (token_id.back() != token::id::eoi) {
 		auto &src = token_src.back();
 		*f = lex_failure(buffer.get(), src, calculate_line(lines, src.begin()),
 			token_id.back());

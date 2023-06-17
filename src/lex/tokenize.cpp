@@ -45,8 +45,8 @@ results process(std::span<char8_t const> input) noexcept
 				continue;
 			} else {
 				line_out.push_back(src.begin());
-				return results{std::move(id_out), std::move(src_out),
-					std::move(line_out), true};
+				return results{
+					std::move(id_out), std::move(src_out), std::move(line_out)};
 			}
 		case match::omit:
 			if (found == id::newline) {
@@ -56,8 +56,8 @@ results process(std::span<char8_t const> input) noexcept
 		case match::invalid:
 			id_out.push_back(found);
 			src_out.push_back(src);
-			return results{std::move(id_out), std::move(src_out),
-				std::move(line_out), false};
+			return results{
+				std::move(id_out), std::move(src_out), std::move(line_out)};
 		}
 	}
 }
