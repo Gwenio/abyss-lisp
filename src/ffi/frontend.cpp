@@ -41,6 +41,7 @@ struct failure
 	uint32_t offset;
 	uint32_t length;
 	uint32_t line;
+	uint32_t unmatched;
 	token::id id; // set to eoi if representing a parser error
 	parser::node node;
 };
@@ -83,14 +84,14 @@ inline failure lex_failure(char8_t const *base, std::span<char8_t const> src,
 	uint32_t line, token::id err) noexcept
 {
 	auto [offset, length] = make_slice(base, src);
-	return failure{offset, length, line, err, parser::node::eoi};
+	return failure{offset, length, line, 0, err, parser::node::eoi};
 }
 
 inline failure parse_failure(char8_t const *base, std::span<char8_t const> src,
-	uint32_t line, parser::node err) noexcept
+	uint32_t line, uint32_t unmatched, parser::node err) noexcept
 {
 	auto [offset, length] = make_slice(base, src);
-	return failure{offset, length, line, token::id::eoi, err};
+	return failure{offset, length, line, unmatched, token::id::eoi, err};
 }
 
 inline constexpr success wipe_success() noexcept
@@ -168,7 +169,7 @@ loaded ABYSS_EXPORT abyss_load_file(
 	} else {
 		auto &src = token_src.back();
 		*f = parse_failure(buffer.get(), src,
-			calculate_line(lines, src.begin()), parser::node::eoi);
+			calculate_line(lines, src.begin()), unmatched, parser::node::eoi);
 		*s = wipe_success();
 	}
 	return loaded{buffer.release(), size};
