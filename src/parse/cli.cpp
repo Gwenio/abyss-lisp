@@ -56,9 +56,9 @@ void print_source(id x, std::string_view type,
 		 << line + 1 << endl;
 }
 
-#define PRINT_TOKEN(type, _unused)                                       \
-	case id::type:                                                       \
-		print_source(id::type, #type, buffer, token_src[x], line_count); \
+#define PRINT_TOKEN(type, _unused)                                 \
+	case id::type:                                                 \
+		print_source(id::type, #type, buffer, token_src[x], line); \
 		break;
 
 int main(int const argc, char const *const *argv)
@@ -95,10 +95,8 @@ int main(int const argc, char const *const *argv)
 	*buffer.rbegin() = '\x00';
 	auto [token_id, token_src, lines] = token::process(buffer);
 	assert(token_id.size() == token_src.size());
-	for (std::size_t x = 0, line_count = 0; x < token_id.size(); x++) {
-		while (lines[line_count] < token_src[x].begin()) {
-			++line_count;
-		}
+	for (std::size_t x = 0; x < token_id.size(); x++) {
+		auto line = token::calculate_line(lines, token_src[x].begin());
 		switch (token_id[x]) {
 			ABYSS_LEX_TOKENS(PRINT_TOKEN);
 		}

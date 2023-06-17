@@ -21,6 +21,7 @@
 
 #include <abyss/lex/tokens.hpp>
 #include <abyss/lex/scanner.hpp>
+#include <algorithm>
 #include <tuple>
 #include <vector>
 
@@ -33,6 +34,13 @@ using results = std::tuple<std::vector<id>, std::vector<scanner::buffer_t>,
  *	\brief Collects tokens from input text.
  */
 results process(std::span<char8_t const> input) noexcept;
+
+inline uint32_t calculate_line(
+	std::vector<scanner::pos_t> const &lines, scanner::pos_t offset) noexcept
+{
+	return static_cast<uint32_t>(
+		std::lower_bound(lines.begin(), lines.end(), offset) - lines.begin());
+}
 
 }
 

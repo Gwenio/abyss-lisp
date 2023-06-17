@@ -20,7 +20,6 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdint>
-#include <algorithm>
 #include <filesystem>
 #include <limits>
 #include <memory>
@@ -72,14 +71,6 @@ inline slice make_slice(
 		static_cast<uint32_t>(src.size())};
 }
 
-template<typename T>
-inline uint32_t calculate_line(std::vector<T> const &lines, T offset) noexcept
-{
-	return static_cast<uint32_t>(
-		(std::lower_bound(lines.begin(), lines.end(), offset) - lines.begin()) +
-		1);
-}
-
 inline failure lex_failure(char8_t const *base, std::span<char8_t const> src,
 	uint32_t line, token::id err) noexcept
 {
@@ -106,6 +97,7 @@ loaded ABYSS_EXPORT abyss_load_file(
 {
 	using std::unique_ptr;
 	using std::make_unique;
+	using token::calculate_line;
 	assert(f);
 	assert(s);
 	FILE *file = std::fopen(reinterpret_cast<char const *>(name), "rb");
