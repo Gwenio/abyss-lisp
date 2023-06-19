@@ -72,18 +72,20 @@ token::id scanner::next_impl() noexcept {
 		"#null" { return id::null; }
 		"#ignore" { return id::ignore; }
 		"#inert" { return id::inert; }
-		'#f'|"#false" { return id::false_; }
-		'#t'|"#true" { return id::true_; }
+		"#false" { return id::false_; }
+		"#true" { return id::true_; }
 
+		["]["] | [']['] { return id::empty_string; }
 		["] (([ -~]\[\\"])|("\\"[ -~]))* ["] { return id::string; }
 		['] (([ -~]\[\\'])|("\\"[ -~]))* ['] { return id::string; }
 		["] (([ -~]\[\\"])|("\\"[ -~]))* { return id::invalid_string; }
 		['] (([ -~]\[\\'])|("\\"[ -~]))* { return id::invalid_string; }
 
-		"0"|("-"?[1-9] dec_int) { return id::int_dec; }
-		'#x' [+\-] [0-9A-Fa-f] hex_int { return id::int_hex; }
-		'#b' [+\-]  [01] bin_int { return id::int_bin; }
-		'#o' [+\-]  [0-7] oct_int { return id::int_oct; }
+		("#"[XBOxbo])?"-0"([']?"0")* { return id::invalid_neg_zero; }
+		"-"?[0-9] dec_int { return id::int_dec; }
+		'#x' "-"? [0-9A-Fa-f] hex_int { return id::int_hex; }
+		'#b' "-"?  [01] bin_int { return id::int_bin; }
+		'#o' "-"?  [0-7] oct_int { return id::int_oct; }
 
 		symbol_head symbol_tail { return id::symbol; }
 		"_" (symbol_head symbol_tail)? { return id::ignore; }

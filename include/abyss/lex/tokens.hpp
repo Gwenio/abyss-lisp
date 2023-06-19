@@ -40,6 +40,7 @@ enum class match : type
 	X(ignore, atom)              \
 	X(true_, atom)               \
 	X(false_, atom)              \
+	X(empty_string, atom)        \
 	X(symbol, atom)              \
 	X(string, atom)              \
 	X(int_dec, atom)             \
@@ -67,6 +68,7 @@ enum class match : type
 	X(invalid_inline_comment, invalid) \
 	X(invalid_float_type, invalid)     \
 	X(invalid_int_type, invalid)       \
+	X(invalid_neg_zero, invalid)       \
 	X(invalid_string, invalid)         \
 	X(invalid_cp, invalid)             \
 	X(invalid_cp_esc, invalid)         \
