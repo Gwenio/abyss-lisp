@@ -3,7 +3,7 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
+		:make-app :+eff-exn+ :+eff-fix+ :+eff-ret+ :make-glyph
 	)
 	(:import-from :abyss/error
 		:invalid-comb-p :sym-not-found-p
@@ -34,6 +34,10 @@
 	)
 )
 
+(defvar +f+ (make-glyph "f"))
+(defvar +x+ (make-glyph "x"))
+(defvar +y+ (make-glyph "y"))
+
 (defmacro run-eval-case (x env)
 	`(initial-context
 		(lambda () (evaluate ,x ,env))
@@ -53,28 +57,28 @@
 
 (test eval-lookup
 	(let ((env (make-environment nil)))
-		(setf (gethash :x (env-table env)) nil)
-		(is (null (run-eval-case :x env)))
+		(setf (gethash +x+ (env-table env)) nil)
+		(is (null (run-eval-case +x+ env)))
 		(is (sym-not-found-p
-			(run-eval-case :fake env)))
+			(run-eval-case +f+ env)))
 	)
 )
 
 (test eval-combine-operative
 	(let ((env (make-environment nil)))
-		(setf (gethash :x (env-table env)) nil)
+		(setf (gethash +x+ (env-table env)) nil)
 		(is (equalp (list env)
 			(run-eval-case (list #'normal-pass) env)
 		))
-		(is (equalp (list env :x)
-			(run-eval-case (list #'normal-pass :x) env)
+		(is (equalp (list env +x+)
+			(run-eval-case (list #'normal-pass +x+) env)
 		))
-		(is (equalp (list env :x)
+		(is (equalp (list env +x+)
 			(run-eval-case
 				(list (list #'(lambda (_)
 					(declare (ignore _))
 					(normal-pass #'normal-pass)
-				)) :x)
+				)) +x+)
 				env)
 		))
 	)
@@ -85,21 +89,21 @@
 			(env (make-environment nil))
 			(dummy (make-app #'normal-pass))
 		)
-		(setf (gethash :x (env-table env)) nil)
+		(setf (gethash +x+ (env-table env)) nil)
 		(is (equalp (list env)
 			(run-eval-case (list dummy) env)))
 		(is (equalp (list env nil)
 			(run-eval-case (list dummy nil) env)))
 		(is (equalp (list env nil 0)
 			(run-eval-case (list dummy nil 0) env)))
-		(setf (gethash :f (env-table env)) dummy)
+		(setf (gethash +f+ (env-table env)) dummy)
 		(is (equalp (list env nil 0)
-			(run-eval-case (list :f nil 0) env)))
-		(setf (gethash :y (env-table env)) :x)
-		(is (equalp (list* env nil 0 :x)
-			(run-eval-case  (list* dummy :x 0 :y) env)))
+			(run-eval-case (list +f+ nil 0) env)))
+		(setf (gethash +y+ (env-table env)) +x+)
+		(is (equalp (list* env nil 0 +x+)
+			(run-eval-case  (list* dummy +x+ 0 +y+) env)))
 		(is (equalp (list* env nil 0 nil)
-			(run-eval-case (list* (make-app dummy) :y 0 :y) env)))
+			(run-eval-case (list* (make-app dummy) +y+ 0 +y+) env)))
 	)
 )
 

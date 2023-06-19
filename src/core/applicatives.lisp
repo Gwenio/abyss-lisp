@@ -19,7 +19,7 @@
 	(:use :cl)
 	(:import-from :abyss/types
 		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :app-comb
+		:applicative-p :app-comb :glyph-p
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
@@ -125,7 +125,7 @@
 )
 
 (defun symbol-p-impl (args)
-	(type-pred-body args x (keywordp x))
+	(type-pred-body args x (glyph-p x))
 )
 
 (defun oper-p-impl (args)

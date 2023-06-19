@@ -19,7 +19,7 @@
 	(:use :cl)
 	(:import-from :abyss/types
 		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :applicative :app-comb
+		:applicative-p :applicative :app-comb :glyph-p
 		:make-effect :effect-p :effect-name :effect-resumable
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 	)
@@ -285,7 +285,7 @@
 (defun handler-impl (args)
 	(bind-params args (env cont . cases)
 		(if (consp cases) ; must be at least one effect handled
-			(if (or (keywordp cont) (ignore-p cont))
+			(if (or (glyph-p cont) (ignore-p cont))
 				(multiple-value-bind (x y p b) (handler-impl-case cases)
 					(if x
 						(throw-exn x)
@@ -305,7 +305,7 @@
 (defun handler/s-impl (args)
 	(bind-params args (env cont init . cases)
 		(if (consp cases) ; must be at least one effect handled
-			(if (or (keywordp cont) (ignore-p cont))
+			(if (or (glyph-p cont) (ignore-p cont))
 				(multiple-value-bind (x y p b) (handler-impl-case cases)
 					(if x
 						(throw-exn x)

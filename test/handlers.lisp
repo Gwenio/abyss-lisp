@@ -5,6 +5,7 @@
 	(:import-from :abyss/types
 		:+inert+ :+ignore+ :+true+ :+false+ :applicative-p
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
+		:make-glyph
 	)
 	(:import-from :abyss/error
 		:sym-not-found-p
@@ -51,36 +52,43 @@
 	`(initial-context (lambda () (evaluate ,x ,env)) #'root-handler)
 )
 
+(defvar +k+ (make-glyph "k"))
+(defvar +p+ (make-glyph "perform"))
+(defvar +x+ (make-glyph "x"))
+(defvar +ep+ (list (make-glyph "eff") +p+))
+(defvar +exx+ (list (make-glyph "eff") +x+ +x+))
+(defvar +exk+ (list (make-glyph "eff") +x+ +k+))
+
 (test handlers-non-resume
 	(let ()
 		(is (eq t
 			(run-h-case
 				(list #'seq-impl
-					(list #'define-impl '(:eff :perform)
+					(list #'define-impl +ep+
 						(list #'make-eff-impl "dummy"))
 					(list #'with-impl
-						(list #'handler-impl +ignore+ '(:eff :x :x))
-						(list :perform t)))
+						(list #'handler-impl +ignore+ +exx+)
+						(list +p+ t)))
 				(make-environment nil)))
 		)
 		(is (eq t ; with symbol for binding continuation
 			(run-h-case
 				(list #'seq-impl
-					(list #'define-impl '(:eff :perform)
+					(list #'define-impl +ep+
 						(list #'make-eff-impl "dummy"))
 					(list #'with-impl
-						(list #'handler-impl :k '(:eff :x :x))
-						(list :perform t)))
+						(list #'handler-impl +k+ +exx+)
+						(list +p+ t)))
 				(make-environment nil)))
 		)
 		(is (sym-not-found-p
 			(run-h-case ; check continuation is not bound for non-resumable
 				(list #'seq-impl
-					(list #'define-impl '(:eff :perform)
+					(list #'define-impl +ep+
 						(list #'make-eff-impl "dummy"))
 					(list #'with-impl
-						(list #'handler-impl :k '(:eff :x :k))
-						(list :perform t)))
+						(list #'handler-impl +k+ +exk+)
+						(list +p+ t)))
 				(make-environment nil)))
 		)
 	)
@@ -91,33 +99,33 @@
 		(is (eq t
 			(run-h-case
 				(list #'seq-impl
-					(list #'define-impl '(:eff :perform)
+					(list #'define-impl +ep+
 						(list #'make-eff/k-impl "dummy"))
 					(list #'with-impl
-						(list #'handler-impl +ignore+ '(:eff :x :x))
-						(list :perform t)))
+						(list #'handler-impl +ignore+ +exx+)
+						(list +p+ t)))
 				(make-environment nil)))
 		)
 		(is (eq t ; with symbol for binding continuation
 			(run-h-case
 				(list #'seq-impl
-					(list #'define-impl '(:eff :perform)
+					(list #'define-impl +ep+
 						(list #'make-eff/k-impl "dummy"))
 					(list #'with-impl
-						(list #'handler-impl :k '(:eff :x :x))
-						(list :perform t)))
+						(list #'handler-impl +k+ +exx+)
+						(list +p+ t)))
 				(make-environment nil)))
 		)
 		(is (eq t ; check continuation is bound for resumable
 			(run-h-case
 				(list #'seq-impl
-					(list #'define-impl '(:eff :perform)
+					(list #'define-impl +ep+
 						(list #'make-eff/k-impl "dummy"))
 					(list #'with-impl
-						(list #'handler-impl :k
-							(list :eff :x
-								(list (make-app #'resume-impl) :k :x)))
-						(list :perform t)))
+						(list #'handler-impl +k+
+							(list (make-glyph "eff") +x+
+								(list (make-app #'resume-impl) +k+ +x+)))
+						(list +p+ t)))
 				(make-environment nil)))
 		)
 	)
@@ -128,7 +136,7 @@
 		(is (eq t
 			(run-h-case
 				(list #'with-impl
-					(list #'handler-impl +ignore+ (list +eff-exn+ :x :x))
+					(list #'handler-impl +ignore+ (list +eff-exn+ +x+ +x+))
 					(list (make-app #'throw-impl) t)
 				)
 				env))
@@ -137,26 +145,34 @@
 )
 
 (test handlers-state
-	(let ()
+	(let (
+		(c (make-glyph "cons"))
+		(g (make-glyph "get"))
+		(s (make-glyph "set"))
+		(save (make-glyph "save"))
+		(st (make-glyph "state"))
+		(load (make-glyph "load"))
+		(res (make-glyph "resume"))
+		)
 		(is (equal '((4 . 2) 4 . 2)
 			(run-h-case
 				(list #'seq-impl
-					(list #'define-impl :resume
+					(list #'define-impl res
 						(make-app #'resume-impl))
-					(list #'define-impl :cons
+					(list #'define-impl c
 						(make-app #'cons-impl))
-					(list #'define-impl '(:load :get)
+					(list #'define-impl (list load g)
 						(list #'make-eff/k-impl "get"))
-					(list #'define-impl '(:save :set)
+					(list #'define-impl (list save s)
 						(list #'make-eff/k-impl "set"))
 					(list #'with-impl
-						(list #'handler/s-impl :k '(:state)
-							`(,+eff-ret+ :x (:cons :state :x))
-							'(:load nil ((:resume :k :state) :state))
-							`(:save :x ((:resume :k ,+inert+) :x)))
+						(list #'handler/s-impl +k+ (list st)
+							`(,+eff-ret+ ,+x+ (,c ,st ,+x+))
+							`(,load nil ((,res ,+k+ ,st) ,st))
+							`(,save ,+x+ ((,res ,+k+ ,+inert+) ,+x+)))
 						'(2)
-						'(:set (:cons 4 (:get nil)))
-						'(:get nil)))
+						`(,s (,c 4 (,g nil)))
+						`(,g nil)))
 				(make-environment nil)))
 		)
 	)

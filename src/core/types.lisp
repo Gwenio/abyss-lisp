@@ -22,6 +22,7 @@
 		:make-effect :effect-p :effect-name :effect-resumable
 		:make-app :app-comb :applicative
 		:make-record :record-p :record-obj
+		:make-glyph :glyph-p
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 	)
 )
@@ -73,6 +74,27 @@
 		:type hash-table
 		:read-only t
 	)
+)
+
+(defstruct
+	(glyph
+		(:constructor make-glyph-aux (str))
+	)
+	(str (error "glyph requires `str`")
+		:type simple-string
+		:read-only t
+	)
+)
+
+(declaim (type hash-table +glyph-table+))
+
+(defvar +glyph-table+ (make-hash-table :test 'equal))
+
+(declaim (ftype (function (simple-string) glyph) make-glyph))
+
+(defun make-glyph (str)
+	(or (gethash str +glyph-table+)
+		(setf (gethash str +glyph-table+) (make-glyph-aux str)))
 )
 
 (defvar +inert+ (make-inert-type))

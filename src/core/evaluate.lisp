@@ -21,7 +21,7 @@
 		:env-lookup
 	)
 	(:import-from :abyss/types
-		:app-comb :applicative-p :record-p :record-obj
+		:app-comb :applicative-p :record-p :record-obj :glyph-p
 	)
 	(:import-from :abyss/error
 		:make-invalid-comb :make-sym-not-found
@@ -41,7 +41,7 @@
 (defun evaluate (x env)
 	"The main evaluation function."
 	(typecase x
-		(keyword
+		(abyss/types::glyph
 			(multiple-value-bind (found v) (env-lookup env x)
 				(if found
 					(normal-pass v)
@@ -71,7 +71,7 @@
 
 (defun record-fetch (rec args)
 	(typecase args
-		(keyword
+		(abyss/types::glyph
 			(multiple-value-bind (val found) (gethash args (record-obj rec))
 				(if found
 					(normal-pass val)
@@ -134,7 +134,7 @@
 					(push-frame (eval-map env (cdr next) done fresh))
 					(evaluate (first next) env)
 				)
-				(keyword
+				(abyss/types::glyph
 					(push-frame (eval-tail done fresh))
 					(evaluate next env)
 				)
@@ -162,7 +162,7 @@
 					(push-frame (eval-map env (cdr tail) next args))
 					(evaluate (first tail) env)
 				)
-				(keyword
+				(abyss/types::glyph
 					(push-frame (eval-tail next args))
 					(evaluate tail env)
 				)

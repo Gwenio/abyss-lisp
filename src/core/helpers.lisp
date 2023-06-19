@@ -121,7 +121,7 @@
 							(throw-exn (make-arg-null x))
 						)
 					)
-					(keyword
+					(abyss/types::glyph
 						(if (gethash ,binding used)
 							(throw-exn (make-arg-repeat x))
 							(progn

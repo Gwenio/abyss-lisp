@@ -3,7 +3,7 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:+ignore+ :+true+ :+false+ :applicative-p
+		:+ignore+ :+true+ :+false+ :applicative-p :make-glyph
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
@@ -39,6 +39,14 @@
 	)
 )
 
+(defvar +i+ (make-glyph "i"))
+(defvar +m+ (make-glyph "m"))
+(defvar +n+ (make-glyph "n"))
+(defvar +w+ (make-glyph "w"))
+(defvar +x+ (make-glyph "x"))
+(defvar +y+ (make-glyph "y"))
+(defvar +z+ (make-glyph "z"))
+
 (defmacro run-oper-case (x env)
 	`(initial-context (lambda () (evaluate ,x ,env)) #'root-handler)
 )
@@ -69,12 +77,12 @@
 			(run-oper-case
 				(flet ((foo (x) (normal-pass (cdr x))))
 					(list #'seq-impl
-						(list #'define-impl :i 0)
+						(list #'define-impl +i+ 0)
 						(list #'define-impl
-							'(:x :y . :z)
+							(list* +x+ +y+ +z+)
 							(list* #'foo 1 2 3))
 						(list #'define-impl
-							(list* +ignore+ '(:m :n) +ignore+)
+							(list* +ignore+ (list +m+ +n+) +ignore+)
 							(list #'foo 4 (list 5 6)))
 						(list #'define-impl nil nil)
 					)
@@ -83,7 +91,7 @@
 		)
 		(loop with table = (env-table env)
 			for x = 0 then (+ x 1)
-			for y in '(:i :x :y :z nil :m :n)
+			for y in (list +i+ +x+ +y+ +z+ nil +m+ +n+)
 			when y
 			do (is (eql x (gethash y table)))
 		)
@@ -94,7 +102,7 @@
 		)
 		(is (arg-pair-p
 			(run-oper-case
-				(list #'define-impl '(:x) 1)
+				(list #'define-impl (list +x+) 1)
 				env))
 		)
 	)
@@ -127,39 +135,39 @@
 				(list (list #'vau-impl nil +ignore+ 1))
 				env))
 		)
-		(setf (gethash :ident (env-table env))
+		(setf (gethash +i+ (env-table env))
 			(make-app #'(lambda (args) (normal-pass (cadr args)))))
-		(setf (gethash :x (env-table env)) 42)
+		(setf (gethash +x+ (env-table env)) 42)
 		(is (eql 42
 			(run-oper-case
-				(list (list #'vau-impl nil +ignore+ '(:ident :x)))
+				(list (list #'vau-impl nil +ignore+ (list +i+ +x+)))
 				env))
 		)
 		(is (eql 7
 			(run-oper-case
 				(list
-					(list #'vau-impl '(:y) +ignore+
-						'(:ident :x)
-						'(:ident :y))
+					(list #'vau-impl (list +y+) +ignore+
+						(list +i+ +x+)
+						(list +i+ +y+))
 					7)
 				env))
 		)
 		(is (eql 3
 			(run-oper-case
 				(list
-					(list #'vau-impl '(:y :x) +ignore+
-						'(:ident :y)
-						'(:ident :x))
+					(list #'vau-impl (list +y+ +x+) +ignore+
+						(list +i+ +y+)
+						(list +i+ +x+))
 					7 3)
 				env))
 		)
 		(is (eql 9
 			(run-oper-case
 				(list
-					(list #'vau-impl '(:y :x) +ignore+
-						'(:ident :y)
-						(list #'define-impl :x 9)
-						'(:ident :x))
+					(list #'vau-impl (list +y+ +x+) +ignore+
+						(list +i+ +y+)
+						(list #'define-impl +x+ 9)
+						(list +i+ +x+))
 					7 3)
 				env))
 		)
@@ -193,39 +201,39 @@
 				(list (list #'lambda-impl nil 1))
 				env))
 		)
-		(setf (gethash :ident (env-table env))
+		(setf (gethash +i+ (env-table env))
 			(make-app #'(lambda (args) (normal-pass (cadr args)))))
-		(setf (gethash :x (env-table env)) 42)
+		(setf (gethash +x+ (env-table env)) 42)
 		(is (eql 42
 			(run-oper-case
-				(list (list #'lambda-impl nil '(:ident :x)))
+				(list (list #'lambda-impl nil (list +i+ +x+)))
 				env))
 		)
 		(is (eql 7
 			(run-oper-case
 				(list
-					(list #'lambda-impl '(:y)
-						'(:ident :x)
-						'(:ident :y))
+					(list #'lambda-impl (list +y+)
+						(list +i+ +x+)
+						(list +i+ +y+))
 					7)
 				env))
 		)
 		(is (eql 3
 			(run-oper-case
 				(list
-					(list #'lambda-impl '(:y :x)
-						'(:ident :y)
-						'(:ident :x))
+					(list #'lambda-impl (list +y+ +x+)
+						(list +i+ +y+)
+						(list +i+ +x+))
 					7 3)
 				env))
 		)
 		(is (eql 9
 			(run-oper-case
 				(list
-					(list #'lambda-impl '(:y :x)
-						'(:ident :y)
-						(list #'define-impl :x 9)
-						'(:ident :x))
+					(list #'lambda-impl (list +y+ +x+)
+						(list +i+ +y+)
+						(list #'define-impl +x+ 9)
+						(list +i+ +x+))
 					7 3)
 				env))
 		)
@@ -246,17 +254,17 @@
 		)
 		(loop with table = (env-table env)
 			for x in (list +true+ +false+ 0 1)
-			for y in '(:w :x :y :z)
+			for y in (list +w+ +x+ +y+ +z+)
 			do (setf (gethash y table) x)
 		)
 		(is (eql 0
 			(run-oper-case
-				(list #'if-impl :w :y :z)
+				(list #'if-impl +w+ +y+ +z+)
 				env))
 		)
 		(is (eql 1
 			(run-oper-case
-				(list #'if-impl :x :y :z)
+				(list #'if-impl +x+ +y+ +z+)
 				env))
 		)
 	)
@@ -287,34 +295,34 @@
 		)
 		(loop with table = (env-table env)
 			for x in (list +true+ +false+ 0 1)
-			for y in '(:w :x :y :z)
+			for y in (list +w+ +x+ +y+ +z+)
 			do (setf (gethash y table) x)
 		)
 		(is (eql 0
 			(run-oper-case
-				(list #'cond-impl '(:w :y))
+				(list #'cond-impl (list +w+ +y+))
 				env))
 		)
 		(is (eql 1
 			(run-oper-case
 				(list #'cond-impl
-					'(:x :y)
-					'(:w :z)
+					(list +x+ +y+)
+					(list +w+ +z+)
 				)
 				env))
 		)
 		(is (eql 0
 			(run-oper-case
 				(list #'cond-impl
-					'(:w :y)
-					'(:w :z)
+					(list +w+ +y+)
+					(list +w+ +z+)
 				)
 				env))
 		)
 		(is (eql 0
 			(run-oper-case
 				(list #'cond-impl
-					'(:w :w :y)
+					(list +w+ +w+ +y+)
 				)
 				env))
 		)
@@ -335,17 +343,17 @@
 		)
 		(is (eql 0
 			(run-oper-case
-				(list #'let-impl '((:x 0)) :x)
+				(list #'let-impl `((,+x+ 0)) +x+)
 				env))
 		)
 		(is (eql 0
 			(run-oper-case
-				(list #'let-impl '((:x 0) (:y 1)) :x)
+				(list #'let-impl `((,+x+ 0) (,+y+ 1)) +x+)
 				env))
 		)
 		(is (eql 1
 			(run-oper-case
-				(list #'let-impl '((:x 0) (:y 1)) :y)
+				(list #'let-impl `((,+x+ 0) (,+y+ 1)) +y+)
 				env))
 		)
 		; todo: test errors are produced when given bad params
@@ -356,12 +364,12 @@
 	(let ((env (make-environment nil)))
 		(is (eql 0
 			(run-oper-case
-				(list #'let*-impl '((:x 0) (:y :x)) :y)
+				(list #'let*-impl `((,+x+ 0) (,+y+ ,+x+)) +y+)
 				env))
 		)
 		(is (eql 0
 			(run-oper-case
-				(list #'let*-impl '((:x 0) (:y :x)) :x)
+				(list #'let*-impl `((,+x+ 0) (,+y+ ,+x+)) +x+)
 				env))
 		)
 	)
@@ -375,31 +383,39 @@
 	)
 )
 
+(defvar +fib+ (make-glyph "fib"))
+(defvar +lam+ (make-glyph "$lambda"))
+(defvar +if+ (make-glyph "$if"))
+(defvar +lt+ (make-glyph "<?"))
+(defvar +plus+ (make-glyph "+"))
+(defvar +sub+ (make-glyph "-"))
+
 (test oper-letrec
 	(let ((env (make-environment nil)) (fib-n 10))
-		(setf (gethash :$if (env-table env)) #'if-impl)
-		(setf (gethash :$lambda (env-table env)) #'lambda-impl)
-		(setf (gethash :<? (env-table env))
+		(setf (gethash +if+ (env-table env)) #'if-impl)
+		(setf (gethash +lam+ (env-table env)) #'lambda-impl)
+		(setf (gethash +lt+ (env-table env))
 			(make-app (lambda (args)
 				(normal-pass (if (< (second args) (third args))
 					+true+ +false+
 				)))))
-		(setf (gethash :+ (env-table env))
+		(setf (gethash +plus+ (env-table env))
 			(make-app (lambda (args)
 				(normal-pass (+ (second args) (third args))))))
-		(setf (gethash :- (env-table env))
+		(setf (gethash +sub+ (env-table env))
 			(make-app (lambda (args)
 				(normal-pass (- (second args) (third args))))))
 		(is (eql (fib fib-n) (initial-context (lambda ()
 				(evaluate (list
 					#'letrec-impl
-					'((:fib (:$lambda (:n)
-						(:$if (:<? :n 2)
-							:n
-							(:+ (:fib (:- :n 1)) (:fib (:- :n 2)))
+					`((,+fib+ (,+lam+ (,+n+)
+						(,+if+ (,+lt+ ,+n+ 2)
+							,+n+
+							(,+plus+ (,+fib+ (,+sub+ ,+n+ 1))
+								(,+fib+ (,+sub+ ,+n+ 2)))
 						)
 					)))
-					`(:fib ,fib-n)) env)
+					(list +fib+ fib-n)) env)
 			) #'root-handler))
 		)
 		; todo: test that letrec evals bound values in the inner env

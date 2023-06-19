@@ -4,6 +4,7 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:+ignore+ :+true+ :+false+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
+		:make-glyph
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -42,8 +43,8 @@
 )
 
 (test lists-type-preds
-	(let ((env (make-environment nil)))
-		(setf (gethash :x (env-table env)) (cons nil nil))
+	(let ((env (make-environment nil)) (x (make-glyph "x")))
+		(setf (gethash x (env-table env)) (cons nil nil))
 		(is (eq +true+
 			(run-lists-case
 				(list (make-app #'null-p-impl) nil)
@@ -51,7 +52,7 @@
 		)
 		(is (eq +false+
 			(run-lists-case
-				(list (make-app #'null-p-impl) :x)
+				(list (make-app #'null-p-impl) x)
 				env))
 		)
 		(is (eq +false+
@@ -61,7 +62,7 @@
 		)
 		(is (eq +true+
 			(run-lists-case
-				(list (make-app #'cons-p-impl) :x)
+				(list (make-app #'cons-p-impl) x)
 				env))
 		)
 		(is (eq +true+
@@ -71,7 +72,7 @@
 		)
 		(is (eq +true+
 			(run-lists-case
-				(list (make-app #'list-p-impl) :x)
+				(list (make-app #'list-p-impl) x)
 				env))
 		)
 	)
@@ -134,77 +135,77 @@
 )
 
 (test lists-accessors
-	(let ((env (make-environment nil)))
-		(setf (gethash :x (env-table env)) '(0 1 2 3 4 5))
+	(let ((env (make-environment nil)) (x (make-glyph "x")))
+		(setf (gethash x (env-table env)) '(0 1 2 3 4 5))
 		(is (eql 0
 			(run-lists-case
-				(list (make-app #'first-impl) :x)
+				(list (make-app #'first-impl) x)
 				env))
 		)
 		(is (eql 1
 			(run-lists-case
-				(list (make-app #'second-impl) :x)
+				(list (make-app #'second-impl) x)
 				env))
 		)
 		(is (eql 2
 			(run-lists-case
-				(list (make-app #'third-impl) :x)
+				(list (make-app #'third-impl) x)
 				env))
 		)
 		(is (equal '(1 2 3 4 5)
 			(run-lists-case
-				(list (make-app #'tail-impl) :x)
+				(list (make-app #'tail-impl) x)
 				env))
 		)
 		(is (eql 0
 			(run-lists-case
-				(list (make-app #'nth-impl) 0 :x)
+				(list (make-app #'nth-impl) 0 x)
 				env))
 		)
 		(is (eql 3
 			(run-lists-case
-				(list (make-app #'nth-impl) 3 :x)
+				(list (make-app #'nth-impl) 3 x)
 				env))
 		)
 		(is (equal '(4 5)
 			(run-lists-case
-				(list (make-app #'nth-tail-impl) 3 :x)
+				(list (make-app #'nth-tail-impl) 3 x)
 				env))
 		)
 		(is (equal '(5)
 			(run-lists-case
-				(list (make-app #'last-impl) :x)
+				(list (make-app #'last-impl) x)
 				env))
 		)
 		(is (eq nil
 			(run-lists-case
-				(list (make-app #'last-n-impl) 0 :x)
+				(list (make-app #'last-n-impl) 0 x)
 				env))
 		)
 		(is (equal '(5)
 			(run-lists-case
-				(list (make-app #'last-n-impl) 1 :x)
+				(list (make-app #'last-n-impl) 1 x)
 				env))
 		)
 		(is (equal '(4 5)
 			(run-lists-case
-				(list (make-app #'last-n-impl) 2 :x)
+				(list (make-app #'last-n-impl) 2 x)
 				env))
 		)
 		(is (equal '(0 1 2 3 4 5)
 			(run-lists-case
-				(list (make-app #'last-n-impl) 8 :x)
+				(list (make-app #'last-n-impl) 8 x)
 				env))
 		)
 	)
 )
 
 (test lists-length
-	(let ((env (make-environment nil)))
-		(setf (gethash :x (env-table env)) '(0 1 2 3 4 5))
+	(let ((env (make-environment nil)) (x (make-glyph "x")))
+		(setf (gethash x (env-table env)) '(0 1 2 3 4 5))
 		(is (eql 6
 			(run-lists-case
-				(list (make-app #'list-len-impl) :x)
+				(list (make-app #'list-len-impl) x)
 				env))
 		)
 	)
