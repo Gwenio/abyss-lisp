@@ -75,7 +75,7 @@ token::id scanner::next_impl() noexcept {
 		"#false" { return id::false_; }
 		"#true" { return id::true_; }
 
-		["]["] | [']['] { return id::empty_string; }
+		(["]["]) | (['][']) { return id::empty_string; }
 		["] (([ -~]\[\\"])|("\\"[ -~]))* ["] { return id::string; }
 		['] (([ -~]\[\\'])|("\\"[ -~]))* ['] { return id::string; }
 		["] (([ -~]\[\\"])|("\\"[ -~]))* { return id::invalid_string; }
