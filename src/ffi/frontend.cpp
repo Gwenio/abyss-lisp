@@ -166,28 +166,26 @@ loaded ABYSS_EXPORT abyss_load_file(
 	return loaded{buffer.release(), size};
 }
 
-void ABYSS_EXPORT abyss_unload(loaded *target, success *tree) noexcept
+void ABYSS_EXPORT abyss_unload_tree(success &tree) noexcept
 {
-	assert(target);
-	loaded &unload = *target;
-	if (unload.data) {
-		delete[] unload.data;
-		unload.data = nullptr;
+	if (tree.ast) {
+		delete[] tree.ast;
+		tree.ast = nullptr;
 	}
-	if (tree) {
-		success &s = *tree;
-		if (s.ast) {
-			delete[] s.ast;
-			s.ast = nullptr;
-		}
-		if (s.atoms) {
-			delete[] s.atoms;
-			s.atoms = nullptr;
-		}
-		if (s.slices) {
-			delete[] s.slices;
-			s.slices = nullptr;
-		}
+	if (tree.atoms) {
+		delete[] tree.atoms;
+		tree.atoms = nullptr;
+	}
+	if (tree.slices) {
+		delete[] tree.slices;
+		tree.slices = nullptr;
+	}
+}
+
+void ABYSS_EXPORT abyss_unload_buffer(char8_t *buffer) noexcept
+{
+	if (buffer) {
+		delete[] buffer;
 	}
 }
 }

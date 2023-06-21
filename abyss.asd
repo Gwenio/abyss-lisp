@@ -5,7 +5,7 @@
 	:version (:read-file-form "version.sexp")
 	:description "A prototype of a Lisp dialect."
 	:class :package-inferred-system
-	:depends-on (:uiop :cffi)
+	:depends-on (:uiop)
 	:pathname "src/"
 	:components (
 		(module "core" :components (
@@ -24,9 +24,6 @@
 			(:file "record")
 			(:file "ground")
 		))
-		(:module "ffi" :components (
-			(:file "enums")
-		))
 	)
 	:author "James Adam Armstrong"
 	;:maintainer ""
@@ -38,13 +35,26 @@
 		(uiop:subpathname *load-pathname* "README.md"))
 	:in-order-to ((test-op (test-op :abyss/test)))
 )
+(defsystem :abyss/ffi
+	:name "Abyss Lisp FFI"
+	:serial t
+	:depends-on (:uiop :cffi-libffi :abyss)
+	:pathname "src/"
+	:components (
+		(:module "ffi" :components (
+			(:file "enums")
+			(:file "frontend")
+		))
+	)
+	:license "ISC"
+)
 
 (defsystem :abyss/test
 	:name "Abyss Lisp Tests"
 	;:class :package-inferred-system
 	:pathname "test/"
 	:serial t
-	:depends-on ("fiveam" "abyss")
+	:depends-on (:fiveam :abyss)
 	:components (
 		(:file "test")
 		(:file "context")
