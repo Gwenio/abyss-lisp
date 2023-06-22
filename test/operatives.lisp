@@ -20,7 +20,7 @@
 	)
 	(:import-from :abyss/operatives
 		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
-		:let-impl :let*-impl :letrec-impl :letrec*-impl
+		:let-impl :let*-impl
 	)
 )
 (in-package :abyss/test/operatives)
@@ -383,41 +383,41 @@
 	)
 )
 
-(defvar +fib+ (make-glyph "fib"))
-(defvar +lam+ (make-glyph "$lambda"))
-(defvar +if+ (make-glyph "$if"))
-(defvar +lt+ (make-glyph "<?"))
-(defvar +plus+ (make-glyph "+"))
-(defvar +sub+ (make-glyph "-"))
+; (defvar +fib+ (make-glyph "fib"))
+; (defvar +lam+ (make-glyph "$lambda"))
+; (defvar +if+ (make-glyph "$if"))
+; (defvar +lt+ (make-glyph "<?"))
+; (defvar +plus+ (make-glyph "+"))
+; (defvar +sub+ (make-glyph "-"))
 
-(test oper-letrec
-	(let ((env (make-environment nil)) (fib-n 10))
-		(setf (gethash +if+ (env-table env)) #'if-impl)
-		(setf (gethash +lam+ (env-table env)) #'lambda-impl)
-		(setf (gethash +lt+ (env-table env))
-			(make-app (lambda (args)
-				(normal-pass (if (< (second args) (third args))
-					+true+ +false+
-				)))))
-		(setf (gethash +plus+ (env-table env))
-			(make-app (lambda (args)
-				(normal-pass (+ (second args) (third args))))))
-		(setf (gethash +sub+ (env-table env))
-			(make-app (lambda (args)
-				(normal-pass (- (second args) (third args))))))
-		(is (eql (fib fib-n) (initial-context (lambda ()
-				(evaluate (list
-					#'letrec-impl
-					`((,+fib+ (,+lam+ (,+n+)
-						(,+if+ (,+lt+ ,+n+ 2)
-							,+n+
-							(,+plus+ (,+fib+ (,+sub+ ,+n+ 1))
-								(,+fib+ (,+sub+ ,+n+ 2)))
-						)
-					)))
-					(list +fib+ fib-n)) env)
-			) #'root-handler))
-		)
-		; todo: test that letrec evals bound values in the inner env
-	)
-)
+; (test oper-letrec
+; 	(let ((env (make-environment nil)) (fib-n 10))
+; 		(setf (gethash +if+ (env-table env)) #'if-impl)
+; 		(setf (gethash +lam+ (env-table env)) #'lambda-impl)
+; 		(setf (gethash +lt+ (env-table env))
+; 			(make-app (lambda (args)
+; 				(normal-pass (if (< (second args) (third args))
+; 					+true+ +false+
+; 				)))))
+; 		(setf (gethash +plus+ (env-table env))
+; 			(make-app (lambda (args)
+; 				(normal-pass (+ (second args) (third args))))))
+; 		(setf (gethash +sub+ (env-table env))
+; 			(make-app (lambda (args)
+; 				(normal-pass (- (second args) (third args))))))
+; 		(is (eql (fib fib-n) (initial-context (lambda ()
+; 				(evaluate (list
+; 					#'letrec-impl
+; 					`((,+fib+ (,+lam+ (,+n+)
+; 						(,+if+ (,+lt+ ,+n+ 2)
+; 							,+n+
+; 							(,+plus+ (,+fib+ (,+sub+ ,+n+ 1))
+; 								(,+fib+ (,+sub+ ,+n+ 2)))
+; 						)
+; 					)))
+; 					(list +fib+ fib-n)) env)
+; 			) #'root-handler))
+; 		)
+; 		; todo: test that letrec evals bound values in the inner env
+; 	)
+; )

@@ -31,7 +31,7 @@
 	)
 	(:import-from :abyss/operatives
 		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
-		:let-impl :let*-impl :letrec-impl :letrec*-impl
+		:let-impl :let*-impl
 	)
 	(:import-from :abyss/applicatives
 		:eval-impl :wrap-impl :unwrap-impl :make-env-impl :apply-impl
@@ -87,7 +87,7 @@
 			)
 			(list
 				; operatives
-				(list "$seq" #'seq-impl)
+				(list "$do" #'seq-impl)
 				(list "$define!" #'define-impl)
 				(list "$vau" #'vau-impl)
 				(list "$lambda" #'lambda-impl)
@@ -95,8 +95,6 @@
 				(list "$cond" #'cond-impl)
 				(list "$let" #'let-impl)
 				(list "$let*" #'let*-impl)
-				(list "$letrec" #'letrec-impl)
-				(list "$letrec*" #'letrec*-impl)
 				; applicatives
 				(list "eval" (make-app #'eval-impl))
 				(list "wrap" (make-app #'wrap-impl))

@@ -37,7 +37,7 @@
 		:bad-tail :bind-params :boole-branch :destructure
 	)
 	(:export :seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
-		:let-impl :let*-impl :letrec-impl :letrec*-impl
+		:let-impl :let*-impl
 	)
 )
 (in-package :abyss/operatives)
@@ -61,7 +61,7 @@
 
 (declaim (ftype (function ((cons abyss/environment::environment t)) t)
 	seq-impl define-impl vau-impl lambda-impl if-impl cond-impl
-	let-impl let*-impl letrec-impl letrec*-impl))
+	let-impl let*-impl))
 
 (defun seq-impl (args)
 	(let ((body (cdr args)))
@@ -197,46 +197,43 @@
 	))
 )
 
-(defmacro let-body (args rec)
-	`(bind-params ,args (parent-env bindings . body)
+(defun let-impl (args)
+	(bind-params args (parent-env bindings . body)
 		(let ((env (make-environment parent-env)))
 			(typecase body
 				(cons (push-frame (seq-aux env body)))
 				(null nil)
 				(t (push-frame (bad-tail body)))
 			)
-			(handler-case
-				(loop for x in bindings
-					unless (consp x)
-					do (error 'type-error :datum x :expected-type 'cons)
-					else unless (null (cddr x))
-					do (error 'type-error :datum (cddr x) :expected-type 'null)
-					end
-					collect (first x) into y
-					collect (second x) into z
-					finally (return (cons (let-aux (env-table env) y) z))
-				)
-				(type-error (e)
-					(throw-exn
-						(if (eq (type-error-expected-type e) 'cons)
-							(make-arg-pair (type-error-datum e))
-							(make-arg-null (type-error-datum e))
-						))
-				)
-				(:no-error (v) (evaluate v ,(if rec 'env 'parent-env)))
+			(loop for x on bindings
+				while (consp x)
+				unless (consp (first x))
+				do (return (throw-exn (make-arg-pair (first x))))
+				else unless (consp (cdr (first x)))
+				do (return (throw-exn (make-arg-pair (cdr (first x)))))
+				else unless (null (cddr (first x)))
+				do (return (throw-exn (make-arg-null (cddr (first x)))))
+				else
+				collect (first (first x)) into y
+				and collect (first (cdr (first x))) into z
+				end
+				finally (return (if x
+					(throw-exn (make-arg-null x))
+					(evaluate (cons (let-aux (env-table env) (print y)) (print z)) parent-env)
+				))
 			)
 		)
 	)
 )
 
-(defmacro let*-body (args basic iterative)
-	`(bind-params ,args (parent-env bindings . body)
+(defun let*-impl (args)
+	(bind-params args (parent-env bindings . body)
 		(typecase bindings
 			(cons
-				(,basic (list
+				(let-impl (list
 					parent-env
 					(list (first bindings))
-					(list* (function ,iterative) (cdr bindings) body)
+					(list* #'let*-impl (cdr bindings) body)
 				))
 			)
 			(null
@@ -246,8 +243,3 @@
 		)
 	)
 )
-
-(defun let-impl (args) (let-body args nil))
-(defun let*-impl (args) (let*-body args let-impl let*-impl))
-(defun letrec-impl (args) (let-body args t))
-(defun letrec*-impl (args) (let*-body args letrec-impl letrec*-impl))
