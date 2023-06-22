@@ -103,10 +103,10 @@
 (defvar +false+ (make-boole-type nil))
 
 ; non-resumable errors
-(defvar +eff-exn+ (make-effect 'exn nil))
+(defvar +eff-exn+ (make-effect (make-glyph "exn") nil))
 ; resumabled errors
-(defvar +eff-fix+ (make-effect 'fix t))
+(defvar +eff-fix+ (make-effect (make-glyph "fix") t))
 ; normal returns
-(defvar +eff-ret+ (make-effect 'ret nil))
+(defvar +eff-ret+ (make-effect (make-glyph "ret") nil))
 ; initialize stateful handler
-(defvar +eff-init+ (make-effect 'init t))
+(defvar +eff-init+ (make-effect (make-glyph "init") t))
