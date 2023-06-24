@@ -207,7 +207,10 @@
 			)
 			(loop for x on bindings
 				while (consp x)
-				unless (consp (first x))
+				if (glyph-p (first x))
+				collect (first x) into y
+				and collect (first x) into z
+				else unless (consp (first x))
 				do (return (throw-exn (make-arg-pair (first x))))
 				else unless (consp (cdr (first x)))
 				do (return (throw-exn (make-arg-pair (cdr (first x)))))
@@ -215,11 +218,11 @@
 				do (return (throw-exn (make-arg-null (cddr (first x)))))
 				else
 				collect (first (first x)) into y
-				and collect (first (cdr (first x))) into z
+				and collect (second (first x)) into z
 				end
 				finally (return (if x
 					(throw-exn (make-arg-null x))
-					(evaluate (cons (let-aux (env-table env) (print y)) (print z)) parent-env)
+					(evaluate (cons (let-aux (env-table env) y) z) parent-env)
 				))
 			)
 		)

@@ -33,6 +33,8 @@
 )
 (in-package :abyss/helpers)
 
+(declaim (ftype (function (t) (function (t) t)) bad-tail))
+
 (defun bad-tail (tail)
 	(lambda (result)
 		(recover-exn (make-improper-list tail result))
