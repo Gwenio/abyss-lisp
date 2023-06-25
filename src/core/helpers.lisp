@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/helpers
 	(:use :cl)
 	(:import-from :abyss/types
-		:+true+ :+false+ :+inert+
+		:+true+ :+false+ :+inert+ :+tid-boole+
 	)
 	(:import-from :abyss/error
 		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
@@ -79,7 +79,7 @@
 	`(cond
 		((eq ,check +true+) ,t-branch)
 		((eq ,check +false+) ,f-branch)
-		(t (throw-exn (make-type-exn ,check 'boole)))
+		(t (throw-exn (make-type-exn ,check +tid-boole+)))
 	)
 )
 

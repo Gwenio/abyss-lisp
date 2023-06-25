@@ -19,7 +19,8 @@
 	(:use :cl)
 	(:import-from :abyss/types
 		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :app-comb :glyph-p
+		:applicative-p :app-comb :glyph-p :type-id-p
+		:+tid-environment+ :+tid-operative+ :+tid-applicative+
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
@@ -39,7 +40,7 @@
 	)
 	(:export :eval-impl :wrap-impl :unwrap-impl :make-env-impl :apply-impl
 		:current-env-impl :ignore-p-impl :inert-p-impl :symbol-p-impl
-		:oper-p-impl :app-p-impl :comb-p-impl :env-p-impl
+		:oper-p-impl :app-p-impl :comb-p-impl :env-p-impl :type-id-p
 	)
 )
 (in-package :abyss/applicatives)
@@ -48,7 +49,7 @@
 	(bind-params args (nil x env)
 		(if (environment-p env)
 			(evaluate x env)
-			(throw-exn (make-type-exn env 'abyss/environment::environment))
+			(throw-exn (make-type-exn env +tid-environment+))
 		)
 	)
 )
@@ -57,7 +58,7 @@
 	(bind-params args (nil x)
 		(if (or (functionp x) (applicative-p x))
 			(normal-pass (make-app x))
-			(throw-exn (make-type-exn x 'combiner))
+			(throw-exn (make-type-exn x (list +tid-operative+ +tid-applicative+)))
 		)
 	)
 )
@@ -66,7 +67,7 @@
 	(bind-params args (nil x)
 		(if (applicative-p x)
 			(normal-pass (app-comb x))
-			(throw-exn (make-type-exn x 'abyss/types::applicative))
+			(throw-exn (make-type-exn x +tid-applicative+))
 		)
 	)
 )
@@ -82,14 +83,13 @@
 					(bind-params opt (env)
 						(if (environment-p env)
 							(evaluate (cons app x) env)
-							(throw-exn (make-type-exn env
-								'abyss/environment::environment))
+							(throw-exn (make-type-exn env +tid-environment+))
 						)
 					)
 				)
 				(t (throw-exn (make-arg-pair opt)))
 			)
-			(throw-exn (make-type-exn app 'abyss/types::applicative))
+			(throw-exn (make-type-exn app +tid-applicative+))
 		)
 	)
 )
@@ -100,7 +100,7 @@
 			(if (environment-p parent)
 				(normal-pass (make-environment parent))
 				(throw-exn (make-type-exn parent
-					'abyss/environment::environment))
+					+tid-environment+))
 			)
 		)
 		(normal-pass (make-environment nil))
@@ -142,4 +142,8 @@
 
 (defun env-p-impl (args)
 	(type-pred-body args x (environment-p x))
+)
+
+(defun type-id-p-impl (args)
+	(type-pred-body args x (type-id-p x))
 )

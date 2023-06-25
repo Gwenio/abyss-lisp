@@ -24,31 +24,32 @@
 		:make-record :record-p :record-obj
 		:make-glyph :glyph-p
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
+		:make-type-id :type-id-p :tid-name
+		:+tid-type-id+ :+tid-null+ :+tid-inert+ :+tid-ignore+ :+tid-boole+
+		:+tid-cons+ :+tid-symbol+ :+tid-environment+ :+tid-continuation+
+		:+tid-operative+ :+tid-applicative+ :+tid-effect+ :+tid-handler+
+		:+tid-record+ :+tid-string+ :+tid-integer+ :+tid-ratio+
 	)
 )
 (in-package :abyss/types)
 
-(defstruct
-	(inert-type
+(defstruct (inert-type
 		(:predicate inert-p)
 	)
 )
 
-(defstruct
-	(ignore-type
+(defstruct (ignore-type
 		(:predicate ignore-p)
 	)
 )
 
-(defstruct
-	(boole-type
+(defstruct (boole-type
 		(:constructor make-boole-type (x))
 	)
 	(x nil :read-only t)
 )
 
-(defstruct
-	(applicative
+(defstruct (applicative
 		(:conc-name app-)
 		(:constructor make-app (comb))
 	)
@@ -58,30 +59,37 @@
 	)
 )
 
-(defstruct
-	(effect
+(defstruct (effect
 		(:constructor make-effect (name resumable))
 	)
 	(name t :read-only t)
 	(resumable t :read-only t)
 )
 
-(defstruct
-	(record
-		(:constructor make-record ())
-	)
-	(obj (make-hash-table :test 'eq)
-		:type hash-table
-		:read-only t
-	)
-)
-
-(defstruct
-	(glyph
+(defstruct (glyph
 		(:constructor make-glyph-aux (str))
 	)
 	(str (error "glyph requires `str`")
 		:type simple-string
+		:read-only t
+	)
+)
+
+(defstruct (type-id
+		(:constructor make-tid-aux (name))
+		(:conc-name tid-)
+	)
+	(name (error "type-id requires `name`")
+		:type glyph
+		:read-only t
+	)
+)
+
+(defstruct (record
+		(:constructor make-record ())
+	)
+	(obj (make-hash-table :test 'eq)
+		:type hash-table
 		:read-only t
 	)
 )
@@ -97,11 +105,17 @@
 		(setf (gethash str +glyph-table+) (make-glyph-aux str)))
 )
 
+(declaim (type inert-type +inert+))
 (defvar +inert+ (make-inert-type))
+
+(declaim (type ignore-type +ignore+))
 (defvar +ignore+ (make-ignore-type))
+
+(declaim (type boole-type +true+ +false+))
 (defvar +true+ (make-boole-type t))
 (defvar +false+ (make-boole-type nil))
 
+(declaim (type effect +eff-exn+ +eff-fix+ +eff-ret+ +eff-init+))
 ; non-resumable errors
 (defvar +eff-exn+ (make-effect (make-glyph "exn") nil))
 ; resumabled errors
@@ -110,3 +124,33 @@
 (defvar +eff-ret+ (make-effect (make-glyph "ret") nil))
 ; initialize stateful handler
 (defvar +eff-init+ (make-effect (make-glyph "init") t))
+
+(declaim (ftype (function (string) type-id) make-type-id))
+
+(defun make-type-id (name)
+	(make-tid-aux (make-glyph name))
+)
+
+(declaim (type type-id +tid-type-id+ +tid-null+ +tid-inert+ +tid-ignore+
+	+tid-cons+ +tid-boole+ +tid-symbol+ +tid-environment+ +tid-continuation+
+	+tid-operative+ +tid-applicative+ +tid-effect+ +tid-handler+ +tid-record+
+	+tid-string+ +tid-integer+ +tid-ratio+
+))
+
+(defvar +tid-type-id+ (make-type-id "type-id"))
+(defvar +tid-null+ (make-type-id "null"))
+(defvar +tid-inert+ (make-type-id "inert"))
+(defvar +tid-ignore+ (make-type-id "ignore"))
+(defvar +tid-cons+ (make-type-id "cons"))
+(defvar +tid-boole+ (make-type-id "boole"))
+(defvar +tid-symbol+ (make-type-id "symbol"))
+(defvar +tid-environment+ (make-type-id "environment"))
+(defvar +tid-continuation+ (make-type-id "continuation"))
+(defvar +tid-operative+ (make-type-id "operative"))
+(defvar +tid-applicative+ (make-type-id "applicative"))
+(defvar +tid-effect+ (make-type-id "effect"))
+(defvar +tid-handler+ (make-type-id "handler"))
+(defvar +tid-record+ (make-type-id "record"))
+(defvar +tid-string+ (make-type-id "string"))
+(defvar +tid-integer+ (make-type-id "integer"))
+(defvar +tid-ratio+ (make-type-id "ratio"))

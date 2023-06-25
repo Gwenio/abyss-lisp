@@ -22,6 +22,8 @@
 		:applicative-p :applicative :app-comb :glyph-p
 		:make-effect :effect-p :effect-name :effect-resumable
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
+		:+tid-effect+ :+tid-handler+ :+tid-cons+ :+tid-null+
+		:+tid-continuation+
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
@@ -128,7 +130,7 @@
 	(bind-params args (nil cont x)
 		(if (continuation-p cont)
 			(resume-cont x cont)
-			(throw-exn (make-type-exn cont 'continuation))
+			(throw-exn (make-type-exn cont +tid-continuation+))
 		)
 	)
 )
@@ -137,7 +139,7 @@
 	(bind-params args (nil cont handler x)
 		(if (continuation-p cont)
 			(resume-cont/h x cont handler)
-			(throw-exn (make-type-exn cont 'continuation))
+			(throw-exn (make-type-exn cont +tid-continuation+))
 		)
 	)
 )
@@ -152,7 +154,7 @@
 	(bind-params args (env cont . body)
 		(if (continuation-p cont)
 			(resume-cont/call (wrap-seq-aux env body) cont)
-			(throw-exn (make-type-exn cont 'continuation))
+			(throw-exn (make-type-exn cont +tid-continuation+))
 		)
 	)
 )
@@ -161,7 +163,7 @@
 	(bind-params args (env cont handler . body)
 		(if (continuation-p cont)
 			(resume-cont/call+h (wrap-seq-aux env body) cont handler)
-			(throw-exn (make-type-exn cont 'continuation))
+			(throw-exn (make-type-exn cont +tid-continuation+))
 		)
 	)
 )
@@ -210,7 +212,7 @@
 						)
 						(return (throw-exn (make-arg-repeat eff)))
 					)
-					(return (throw-exn (make-type-exn eff 'effect)))
+					(return (throw-exn (make-type-exn eff +tid-effect+)))
 				)
 				finally (return (normal-pass (if init
 					(progn
@@ -245,7 +247,9 @@
 			and collect (cadar ,x) into ,p
 			and collect (cddar ,x) into ,b
 			end
-			finally (return (values (and ,x (make-type-exn ,x 'list)) ,y ,p ,b))
+			finally (return (values
+				(and ,x (make-type-exn ,x (list +tid-null+ +tid-cons+)))
+				,y ,p ,b))
 		)
 	)
 )
@@ -297,7 +301,7 @@
 				)
 				(throw-exn (make-bad-param cont))
 			)
-			(throw-exn (make-type-exn cont 'cons))
+			(throw-exn (make-type-exn cont +tid-cons+))
 		)
 	)
 )
@@ -317,7 +321,7 @@
 				)
 				(throw-exn (make-bad-param cont))
 			)
-			(throw-exn (make-type-exn cont 'cons))
+			(throw-exn (make-type-exn cont +tid-cons+))
 		)
 	)
 )
@@ -337,13 +341,13 @@
 							(wrap-seq-aux env (cons init body))
 							(handler-lookup handler))
 					)
-					(throw-exn (make-type-exn body 'cons))
+					(throw-exn (make-type-exn body +tid-cons+))
 				)
 				(fresh-context
 					(wrap-seq-aux env body)
 					(handler-lookup handler))
 			)
-			(throw-exn (make-type-exn handler 'handler))
+			(throw-exn (make-type-exn handler +tid-handler+))
 		)
 	)
 )

@@ -18,7 +18,7 @@
 (uiop:define-package :abyss/operatives
 	(:use :cl)
 	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app
+		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app :glyph-p
 	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param

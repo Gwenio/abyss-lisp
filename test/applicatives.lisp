@@ -5,6 +5,7 @@
 	(:import-from :abyss/types
 		:+ignore+ :+true+ :+false+ :applicative-p
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
+		:+tid-environment+ :+tid-applicative+
 	)
 	(:import-from :abyss/error
 		:arg-pair-p :type-exn-expect
@@ -65,14 +66,14 @@
 					nil env)
 				env))
 		)
-		(is (eq 'abyss/types::applicative (type-exn-expect
+		(is (eq +tid-applicative+ (type-exn-expect
 			(run-app-case
 				(list (make-app #'apply-impl)
 					#'current-env-impl
 					nil)
 				env)))
 		)
-		(is (eq 'abyss/environment::environment (type-exn-expect
+		(is (eq +tid-environment+ (type-exn-expect
 			(run-app-case
 				(list (make-app #'apply-impl)
 					(make-app #'current-env-impl)

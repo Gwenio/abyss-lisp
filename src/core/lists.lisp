@@ -17,6 +17,9 @@
 
 (uiop:define-package :abyss/lists
 	(:use :cl)
+	(:import-from :abyss/types
+		:+tid-integer+ :+tid-cons+
+	)
 	(:import-from :abyss/error
 		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
 		:make-type-exn :make-invalid-comb :make-improper-list
@@ -84,7 +87,7 @@
 	(bind-params args (nil x)
 		(if (consp x)
 			(normal-pass (car x))
-			(throw-exn (make-type-exn x 'cons))
+			(throw-exn (make-type-exn x +tid-cons+))
 		)
 	)
 )
@@ -93,7 +96,7 @@
 	(bind-params args (nil (t . x))
 		(if (consp x)
 			(normal-pass (car x))
-			(throw-exn (make-type-exn x 'cons))
+			(throw-exn (make-type-exn x +tid-cons+))
 		)
 	)
 )
@@ -102,23 +105,26 @@
 	(bind-params args (nil (t t . x))
 		(if (consp x)
 			(normal-pass (car x))
-			(throw-exn (make-type-exn x 'cons))
+			(throw-exn (make-type-exn x +tid-cons+))
 		)
 	)
 )
 
 (defun nth-impl (args)
 	(bind-params args (nil n x)
-		(if (>= n 0)
-			(loop for count below n
-				if (consp x)
-				do (pop x)
-				else
-				do (return (throw-exn (make-type-exn x 'cons)))
-				end
-				finally (return (normal-pass (car x)))
+		(if (integerp n)
+			(if (>= n 0)
+				(loop for count below n
+					if (consp x)
+					do (pop x)
+					else
+					do (return (throw-exn (make-type-exn x +tid-cons+)))
+					end
+					finally (return (normal-pass (car x)))
+				)
+				(throw-exn (make-type-exn n 'positive-int))
 			)
-			(throw-exn (make-type-exn n 'positive-int))
+			(throw-exn (make-type-exn n +tid-integer+))
 		)
 	)
 )
@@ -127,23 +133,26 @@
 	(bind-params args (nil x)
 		(if (consp x)
 			(normal-pass (cdr x))
-			(throw-exn (make-type-exn x 'cons))
+			(throw-exn (make-type-exn x +tid-cons+))
 		)
 	)
 )
 
 (defun nth-tail-impl (args)
 	(bind-params args (nil n x)
-		(if (>= n 0)
-			(loop for count below n
-				if (consp x)
-				do (pop x)
-				else
-				do (return (throw-exn (make-type-exn x 'cons)))
-				end
-				finally (return (normal-pass (cdr x)))
+		(if (integerp n)
+			(if (>= n 0)
+				(loop for count below n
+					if (consp x)
+					do (pop x)
+					else
+					do (return (throw-exn (make-type-exn x +tid-cons+)))
+					end
+					finally (return (normal-pass (cdr x)))
+				)
+				(throw-exn (make-type-exn n 'positive-int))
 			)
-			(throw-exn (make-type-exn n 'positive-int))
+			(throw-exn (make-type-exn n +tid-integer+))
 		)
 	)
 )
@@ -159,12 +168,15 @@
 
 (defun last-n-impl (args)
 	(bind-params args (nil n x)
-		(if (>= n 0)
-			(if (consp x)
-				(normal-pass (last x n))
-				(normal-pass x)
+		(if (integerp n)
+			(if (>= n 0)
+				(if (consp x)
+					(normal-pass (last x n))
+					(normal-pass x)
+				)
+				(throw-exn (make-type-exn n 'positive-int))
 			)
-			(throw-exn (make-type-exn n 'positive-int))
+			(throw-exn (make-type-exn n +tid-integer+))
 		)
 	)
 )

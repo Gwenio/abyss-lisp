@@ -18,7 +18,11 @@
 (uiop:define-package :abyss/ground
 	(:use :cl)
 	(:import-from :abyss/types
-		:make-app :+eff-ret+ :+eff-exn+ :+eff-fix+ :make-glyph
+		:make-app :+eff-ret+ :+eff-exn+ :+eff-fix+ :make-glyph :tid-name
+		:+tid-type-id+ :+tid-null+ :+tid-inert+ :+tid-ignore+ :+tid-boole+
+		:+tid-cons+ :+tid-symbol+ :+tid-environment+ :+tid-continuation+
+		:+tid-operative+ :+tid-applicative+ :+tid-effect+ :+tid-handler+
+		:+tid-record+ :+tid-string+ :+tid-integer+ :+tid-ratio+
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -37,6 +41,7 @@
 		:eval-impl :wrap-impl :unwrap-impl :make-env-impl :apply-impl
 		:current-env-impl :ignore-p-impl :inert-p-impl :symbol-p-impl
 		:oper-p-impl :app-p-impl :comb-p-impl :env-p-impl
+		:type-of-impl :type-id-p-impl
 	)
 	(:import-from :abyss/handlers
 		:eff-p-impl :cont-p-impl :handler-p-impl
@@ -70,6 +75,34 @@
 )
 (in-package :abyss/ground)
 
+(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+	type-of-impl))
+
+(defun type-of-impl (args)
+	(bind-params args (nil x)
+		(normal-pass (typecase x
+			(null +tid-null+)
+			(cons +tid-cons+)
+			(function +tid-operative+)
+			(integer +tid-integer+)
+			(ratio +tid-ratio+)
+			(string +tid-string+)
+			(abyss/types::inert-type +tid-inert+)
+			(abyss/types::ignore-type +tid-ignore+)
+			(abyss/types::boole-type +tid-boole+)
+			(abyss/types::glyph +tid-symbol+)
+			(abyss/environment::environment +tid-environment+)
+			(abyss/types::applicative +tid-applicative+)
+			(abyss/context::continuation +tid-continuation+)
+			(abyss/types::effect +tid-effect+)
+			(abyss/handlers::handler-type +tid-handler+)
+			(abyss/types::record +tid-record+)
+			(abyss/types::type-id +tid-type-id+)
+			(t (print (type-of x)) (error "Unknown type"))
+		))
+	)
+)
+
 (declaim (type abyss/environment::environment +ground-env+))
 
 (defvar +ground-env+
@@ -86,6 +119,8 @@
 					(second x))
 			)
 			(list
+				; type-id
+				(list "type-of" (make-app #'type-of-impl))
 				; operatives
 				(list "$do" #'seq-impl)
 				(list "$define!" #'define-impl)
@@ -109,6 +144,7 @@
 				(list "applicative?" (make-app #'app-p-impl))
 				(list "combiner?" (make-app #'comb-p-impl))
 				(list "environment?" (make-app #'env-p-impl))
+				(list "type-id?" (make-app #'type-id-p-impl))
 				; handlers
 				(list "effect?" (make-app #'eff-p-impl))
 				(list "continuation?" (make-app #'cont-p-impl))
@@ -158,8 +194,8 @@
 				(list "null?" (make-app #'null-p-impl))
 				(list "cons?" (make-app #'cons-p-impl))
 				(list "list?" (make-app #'list-p-impl))
-				(list "cons" (make-app #'cons-impl))
-				(list "list" (make-app #'list-impl))
+				(list "list1" (make-app #'cons-impl))
+				(list "list0" (make-app #'list-impl))
 				(list "list*" (make-app #'list*-impl))
 				(list "list-len" (make-app #'list-len-impl))
 				(list "first" (make-app #'first-impl))
@@ -175,6 +211,12 @@
 				(list "$record" #'record-impl)
 				(list "$record!" #'record-set-impl)
 			))
+		(mapcar (lambda (x) (setf (gethash (tid-name x) table) x))
+			(list
+				+tid-type-id+ +tid-null+ +tid-inert+ +tid-ignore+ +tid-cons+
+				+tid-boole+ +tid-symbol+ +tid-environment+ +tid-continuation+
+				+tid-operative+ +tid-applicative+ +tid-effect+ +tid-handler+
+				+tid-record+ +tid-string+ +tid-integer+ +tid-ratio+))
 		env
 	)
 )
