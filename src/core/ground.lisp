@@ -37,6 +37,10 @@
 	(:import-from :abyss/context
 		:normal-pass
 	)
+	(:import-from :abyss/modules
+		:export-impl
+		:import-impl
+	)
 	(:export
 		:ground-env :extend-ground :extend-ground-app
 	)
@@ -193,6 +197,10 @@
 				(list "type-exn?" (make-app #'type-exn-p-impl))
 				(list "div-by-zero?" (make-app #'div-zero-p-impl))
 				(list "bounds-exn?" (make-app #'bounds-exn-p-impl))
+				(list "repeat-export?" (make-app #'export-exn-p-impl))
+				; modules
+				(list "$export" #'export-impl)
+				(list "$import" #'import-impl)
 			))
 		(mapcar (lambda (x) (setf (gethash (tid-name x) table) x))
 			(list
@@ -203,7 +211,7 @@
 				+tid-sym-not-found+ +tid-invalid-comb+ +tid-improper-list+
 				+tid-match-param+ +tid-match-repeat+ +tid-match-null+
 				+tid-match-cons+ +tid-bad-cont+ +tid-bad-handler+
-				+tid-type-exn+ +tid-div-zero+ +tid-bounds-exn+
+				+tid-type-exn+ +tid-div-zero+ +tid-bounds-exn+ +tid-export-exn+
 				))
 		env
 	)

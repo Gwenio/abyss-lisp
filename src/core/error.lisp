@@ -34,6 +34,7 @@
 		:+tid-type-exn+ :type-exn-p :make-type-exn
 		:+tid-div-zero+ :div-zero-p :make-div-zero
 		:+tid-bounds-exn+ :bounds-exn-p :make-bounds-exn
+		:+tid-export-exn+ :export-exn-p :make-export-exn
 	)
 )
 (in-package :abyss/error)
@@ -42,7 +43,7 @@
 	+tid-sym-not-found+ +tid-invalid-comb+ +tid-improper-list+
 	+tid-match-param+ +tid-match-repeat+ +tid-match-null+ +tid-match-cons+
 	+tid-bad-cont+ +tid-bad-handler+
-	+tid-type-exn+ +tid-div-zero+ +tid-bounds-exn+
+	+tid-type-exn+ +tid-div-zero+ +tid-bounds-exn+ +tid-export-exn+
 ))
 
 (defvar +tid-sym-not-found+ (make-type-id "sym-not-found"))
@@ -57,6 +58,7 @@
 (defvar +tid-type-exn+ (make-type-id "type-exn"))
 (defvar +tid-div-zero+ (make-type-id "div-by-zero"))
 (defvar +tid-bounds-exn+ (make-type-id "bounds-exn"))
+(defvar +tid-export-exn+ (make-type-id "repeat-export"))
 
 (defmacro exn-pred (x tid)
 	`(and (record-p ,x) (eq ,tid (record-subtype ,x)))
@@ -73,6 +75,8 @@
 (defvar +val+ (make-glyph "value"))
 (defvar +min+ (make-glyph "min"))
 (defvar +max+ (make-glyph "max"))
+(defvar +old+ (make-glyph "old"))
+(defvar +new+ (make-glyph "new"))
 
 (defun make-sym-not-found (sym obj)
 	(let* ((rec (make-record +tid-sym-not-found+)) (table (record-obj rec)))
@@ -209,4 +213,17 @@
 
 (defun bounds-exn-p (x)
 	(exn-pred x +tid-bounds-exn+)
+)
+
+(defun make-export-exn (sym old new)
+	(let* ((rec (make-record +tid-export-exn+)) (table (record-obj rec)))
+		(init-field table +sym+ sym)
+		(init-field table +old+ old)
+		(init-field table +new+ new)
+		rec
+	)
+)
+
+(defun export-exn-p (x)
+	(exn-pred x +tid-export-exn+)
 )

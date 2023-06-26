@@ -39,7 +39,7 @@
 		:sym-not-found-p-impl :invalid-comb-p-impl :improper-list-p-impl
 		:match-param-p-impl :match-cons-p-impl :match-null-p-impl
 		:match-repeat-p-impl :bad-cont-p-impl :bad-handler-p-impl
-		:type-exn-p-impl :div-zero-p-impl :bounds-exn-p-impl
+		:type-exn-p-impl :div-zero-p-impl :bounds-exn-p-impl :export-exn-p-impl
 	)
 )
 (in-package :abyss/record)
@@ -186,4 +186,8 @@
 
 (defun bounds-exn-p-impl (args)
 	(type-pred-body args x (bounds-exn-p x))
+)
+
+(defun export-exn-p-impl (args)
+	(type-pred-body args x (export-exn-p x))
 )

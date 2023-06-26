@@ -22,6 +22,7 @@
 			(:file "lists")
 			(:file "handlers")
 			(:file "record")
+			(:file "modules")
 			(:file "ground")
 		))
 	)
@@ -68,6 +69,7 @@
 		(:file "lists")
 		(:file "handlers")
 		(:file "record")
+		(:file "modules")
 	)
 	:perform (test-op (o c)
 		(symbol-call :fiveam :run!
