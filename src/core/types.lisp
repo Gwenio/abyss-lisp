@@ -21,7 +21,7 @@
 		:boole-type-p :inert-p :ignore-p :applicative-p
 		:make-effect :effect-p :effect-name :effect-resumable
 		:make-app :app-comb :applicative
-		:make-record :record-p :record-obj
+		:make-record :record-p :record-obj :record-subtype
 		:make-glyph :glyph-p
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 		:make-type-id :type-id-p :tid-name
@@ -86,10 +86,14 @@
 )
 
 (defstruct (record
-		(:constructor make-record ())
+		(:constructor make-record (subtype))
 	)
 	(obj (make-hash-table :test 'eq)
 		:type hash-table
+		:read-only t
+	)
+	(subtype (error "record requires `subtype`")
+		:type type-id
 		:read-only t
 	)
 )

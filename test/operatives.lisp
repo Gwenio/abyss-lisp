@@ -7,7 +7,7 @@
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
-		:arg-null-p :arg-pair-p :improper-list-p :type-exn-p
+		:match-null-p :match-cons-p :improper-list-p :type-exn-p
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -95,12 +95,12 @@
 			when y
 			do (is (eql x (gethash y table)))
 		)
-		(is (arg-null-p
+		(is (match-null-p
 			(run-oper-case
 				(list #'define-impl nil 1)
 				env))
 		)
-		(is (arg-pair-p
+		(is (match-cons-p
 			(run-oper-case
 				(list #'define-impl (list +x+) 1)
 				env))

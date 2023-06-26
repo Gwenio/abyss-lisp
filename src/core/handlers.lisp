@@ -26,8 +26,7 @@
 		:+tid-continuation+
 	)
 	(:import-from :abyss/error
-		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
-		:make-type-exn :make-invalid-comb :make-bad-handler-case
+		:make-match-repeat :make-match-param :make-type-exn :make-bad-handler
 	)
 	(:import-from :abyss/environment
 		:make-environment :environment-p :env-table
@@ -210,7 +209,7 @@
 									binds
 								))
 						)
-						(return (throw-exn (make-arg-repeat eff)))
+						(return (throw-exn (make-match-repeat eff)))
 					)
 					(return (throw-exn (make-type-exn eff +tid-effect+)))
 				)
@@ -241,7 +240,7 @@
 		`(loop for ,x on ,cases
 			while (consp ,x)
 			unless (and (consp (car ,x)) (consp (cdar ,x)) (consp (cddar ,x)))
-			do (return (values (make-bad-handler-case (car ,x)) nil nil nil))
+			do (return (values (make-bad-handler (car ,x)) nil nil nil))
 			else
 			collect (caar ,x) into ,y
 			and collect (cadar ,x) into ,p
@@ -299,7 +298,7 @@
 							y) env)
 					)
 				)
-				(throw-exn (make-bad-param cont))
+				(throw-exn (make-match-param cont))
 			)
 			(throw-exn (make-type-exn cont +tid-cons+))
 		)
@@ -319,7 +318,7 @@
 							y) env)
 					)
 				)
-				(throw-exn (make-bad-param cont))
+				(throw-exn (make-match-param cont))
 			)
 			(throw-exn (make-type-exn cont +tid-cons+))
 		)

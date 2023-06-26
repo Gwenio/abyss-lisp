@@ -23,7 +23,7 @@
 		:+tid-environment+ :+tid-operative+ :+tid-applicative+
 	)
 	(:import-from :abyss/error
-		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
+		:make-match-cons :make-match-null :make-match-repeat
 		:make-type-exn
 	)
 	(:import-from :abyss/environment
@@ -40,7 +40,7 @@
 	)
 	(:export :eval-impl :wrap-impl :unwrap-impl :make-env-impl :apply-impl
 		:current-env-impl :ignore-p-impl :inert-p-impl :symbol-p-impl
-		:oper-p-impl :app-p-impl :comb-p-impl :env-p-impl :type-id-p
+		:oper-p-impl :app-p-impl :comb-p-impl :env-p-impl :type-id-p-impl
 	)
 )
 (in-package :abyss/applicatives)
@@ -87,7 +87,7 @@
 						)
 					)
 				)
-				(t (throw-exn (make-arg-pair opt)))
+				(t (throw-exn (make-match-cons opt)))
 			)
 			(throw-exn (make-type-exn app +tid-applicative+))
 		)

@@ -21,7 +21,7 @@
 		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app :glyph-p
 	)
 	(:import-from :abyss/error
-		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
+		:make-match-cons :make-match-null :make-match-repeat :make-match-param
 		:make-type-exn :make-improper-list
 	)
 	(:import-from :abyss/environment
@@ -117,7 +117,7 @@
 				)
 				(t (throw-exn (make-type-exn body 'list)))
 			)
-			(throw-exn (make-bad-param eformal))
+			(throw-exn (make-match-param eformal))
 		)
 	)
 )
@@ -179,7 +179,7 @@
 								(cond-aux env (cdr head) (cdr clauses)))
 							(evaluate (first head) env)
 						)
-						(throw-exn (make-arg-pair head))
+						(throw-exn (make-match-cons head))
 					)
 				)
 			)
@@ -211,17 +211,17 @@
 				collect (first x) into y
 				and collect (first x) into z
 				else unless (consp (first x))
-				do (return (throw-exn (make-arg-pair (first x))))
+				do (return (throw-exn (make-match-cons (first x))))
 				else unless (consp (cdr (first x)))
-				do (return (throw-exn (make-arg-pair (cdr (first x)))))
+				do (return (throw-exn (make-match-cons (cdr (first x)))))
 				else unless (null (cddr (first x)))
-				do (return (throw-exn (make-arg-null (cddr (first x)))))
+				do (return (throw-exn (make-match-null (cddr (first x)))))
 				else
 				collect (first (first x)) into y
 				and collect (second (first x)) into z
 				end
 				finally (return (if x
-					(throw-exn (make-arg-null x))
+					(throw-exn (make-match-null x))
 					(evaluate (cons (let-aux (env-table env) y) z) parent-env)
 				))
 			)

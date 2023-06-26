@@ -21,8 +21,7 @@
 		:+tid-integer+ :+tid-cons+
 	)
 	(:import-from :abyss/error
-		:make-arg-pair :make-arg-null :make-arg-repeat :make-bad-param
-		:make-type-exn :make-invalid-comb :make-improper-list
+		:make-type-exn :make-improper-list :make-bounds-exn
 	)
 	(:import-from :abyss/context
 		:normal-pass :throw-exn :recover-exn
@@ -113,7 +112,7 @@
 (defun nth-impl (args)
 	(bind-params args (nil n x)
 		(if (integerp n)
-			(if (>= n 0)
+			(if (<= 0 n most-positive-fixnum)
 				(loop for count below n
 					if (consp x)
 					do (pop x)
@@ -122,7 +121,7 @@
 					end
 					finally (return (normal-pass (car x)))
 				)
-				(throw-exn (make-type-exn n 'positive-int))
+				(throw-exn (make-bounds-exn n 0 most-positive-fixnum))
 			)
 			(throw-exn (make-type-exn n +tid-integer+))
 		)
@@ -141,7 +140,7 @@
 (defun nth-tail-impl (args)
 	(bind-params args (nil n x)
 		(if (integerp n)
-			(if (>= n 0)
+			(if (<= 0 n most-positive-fixnum)
 				(loop for count below n
 					if (consp x)
 					do (pop x)
@@ -150,7 +149,7 @@
 					end
 					finally (return (normal-pass (cdr x)))
 				)
-				(throw-exn (make-type-exn n 'positive-int))
+				(throw-exn (make-bounds-exn n 0 most-positive-fixnum))
 			)
 			(throw-exn (make-type-exn n +tid-integer+))
 		)
@@ -169,12 +168,12 @@
 (defun last-n-impl (args)
 	(bind-params args (nil n x)
 		(if (integerp n)
-			(if (>= n 0)
+			(if (<= 0 n most-positive-fixnum)
 				(if (consp x)
 					(normal-pass (last x n))
 					(normal-pass x)
 				)
-				(throw-exn (make-type-exn n 'positive-int))
+				(throw-exn (make-bounds-exn n 0 most-positive-fixnum))
 			)
 			(throw-exn (make-type-exn n +tid-integer+))
 		)
@@ -183,13 +182,15 @@
 
 (defun list-len-impl (args)
 	(bind-params args (nil x)
-		(loop with count = 0
-			while (consp x)
-			do (progn
-				(incf count)
+		; lists are unlikely to exceed what fits in a fixnum
+		; especially with SBCL limiting heap size to like 1GB
+		(loop for count fixnum from 0 upto most-positive-fixnum
+			do (if (consp x)
 				(pop x)
+				(return (normal-pass count))
 			)
-			finally (return (normal-pass count))
+			finally (return (throw-exn
+				(make-bounds-exn count nil most-positive-fixnum)))
 		)
 	)
 )

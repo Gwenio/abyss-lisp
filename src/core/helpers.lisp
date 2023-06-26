@@ -21,8 +21,8 @@
 		:+true+ :+false+ :+inert+ :+tid-boole+
 	)
 	(:import-from :abyss/error
-		:make-improper-list :make-arg-pair :make-arg-null :make-type-exn
-		:make-arg-repeat :make-bad-param
+		:make-match-repeat :make-match-param :make-match-null :make-match-cons
+		:make-type-exn :make-improper-list
 	)
 	(:import-from :abyss/context
 		:normal-pass :throw-exn :recover-exn
@@ -49,14 +49,14 @@
 				((null y)
 					`(if (null ,x)
 						,body
-						(throw-exn (make-arg-null ,x))
+						(throw-exn (make-match-null ,x))
 					)
 				)
 				((consp y)
 					(setf body (impl `(cdr ,x) (cdr y)))
 					`(if (consp ,x)
 						,(impl `(car ,x) (car y))
-						(throw-exn (make-arg-pair ,x))
+						(throw-exn (make-match-cons ,x))
 					)
 				)
 				((eq t y) body)
@@ -114,18 +114,18 @@
 								(setf ,binding (first ,binding))
 								(impl (first x))
 							)
-							(throw-exn (make-arg-pair x))
+							(throw-exn (make-match-cons x))
 						)
 					)
 					(null
 						(if (null x)
 							(advance)
-							(throw-exn (make-arg-null x))
+							(throw-exn (make-match-null x))
 						)
 					)
 					(abyss/types::glyph
 						(if (gethash ,binding used)
-							(throw-exn (make-arg-repeat x))
+							(throw-exn (make-match-repeat x))
 							(progn
 								(setf (gethash ,binding ,table) x)
 								(setf (gethash ,binding used) t)
@@ -136,7 +136,7 @@
 					(abyss/types::ignore-type
 						(advance)
 					)
-					(t (throw-exn (make-bad-param ,binding)))
+					(t (throw-exn (make-match-param ,binding)))
 				))
 			))
 			#'impl

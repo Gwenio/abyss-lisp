@@ -3,12 +3,12 @@
 	(:use :cl)
 	(:mix :fiveam)
 	(:import-from :abyss/types
-		:+ignore+ :+true+ :+false+ :applicative-p
+		:+ignore+ :+true+ :+false+ :applicative-p :record-obj :make-glyph
 		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
 		:+tid-environment+ :+tid-applicative+
 	)
 	(:import-from :abyss/error
-		:arg-pair-p :type-exn-expect
+		:match-cons-p :type-exn-p
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -59,26 +59,30 @@
 					nil)
 				env)))
 		)
-		(is (arg-pair-p
+		(is (match-cons-p
 			(run-app-case
 				(list* (make-app #'apply-impl)
 					(make-app #'current-env-impl)
 					nil env)
 				env))
 		)
-		(is (eq +tid-applicative+ (type-exn-expect
-			(run-app-case
+		(let ((exn (run-app-case
 				(list (make-app #'apply-impl)
 					#'current-env-impl
 					nil)
 				env)))
+			(is (type-exn-p exn))
+			(is (eq +tid-applicative+
+				(gethash (make-glyph "expected") (record-obj exn))))
 		)
-		(is (eq +tid-environment+ (type-exn-expect
-			(run-app-case
+		(let ((exn (run-app-case
 				(list (make-app #'apply-impl)
 					(make-app #'current-env-impl)
 					nil t)
 				env)))
+			(is (type-exn-p exn))
+			(is (eq +tid-environment+
+				(gethash (make-glyph "expected") (record-obj exn))))
 		)
 	)
 )

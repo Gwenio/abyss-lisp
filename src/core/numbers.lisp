@@ -21,7 +21,7 @@
 		:+true+ :+false+ :boole-type-p :+tid-integer+ :+tid-ratio+
 	)
 	(:import-from :abyss/error
-		:make-type-exn :make-div-by-zero :make-improper-list
+		:make-type-exn :make-div-zero :make-improper-list
 	)
 	(:import-from :abyss/context
 		:normal-pass :push-frame :throw-exn :recover-exn
@@ -132,12 +132,12 @@
 								(typecase tail
 									(cons
 										(push-frame #'aux)
-										(recover-exn (make-div-by-zero n))
+										(recover-exn (make-div-zero n))
 									)
-									(null (recover-exn (make-div-by-zero n)))
+									(null (recover-exn (make-div-zero n)))
 									(t
 										(push-frame (bad-tail tail))
-										(recover-exn (make-div-by-zero n))
+										(recover-exn (make-div-zero n))
 									)
 								)
 								(typecase tail

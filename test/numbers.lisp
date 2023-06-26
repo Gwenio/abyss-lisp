@@ -6,7 +6,7 @@
 		:+true+ :+false+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
 	)
 	(:import-from :abyss/error
-		:arg-pair-p
+		:match-cons-p
 	)
 	(:import-from :abyss/environment
 		:make-environment
@@ -59,7 +59,7 @@
 
 (test num-sub
 	(let ((env (make-environment nil)) (sub (make-app #'sub-impl)))
-		(is (arg-pair-p (run-num-case (list sub) env)))
+		(is (match-cons-p (run-num-case (list sub) env)))
 		(is (= -1 (run-num-case (list sub 1) env)))
 		(is (= 1 (run-num-case (list sub -1) env)))
 		(is (= -1 (run-num-case (list sub 1 2) env)))
@@ -84,7 +84,7 @@
 
 (test num-div
 	(let ((env (make-environment nil)) (div (make-app #'div-impl)))
-		(is (arg-pair-p (run-num-case (list div) env)))
+		(is (match-cons-p (run-num-case (list div) env)))
 		(is (= 1 (run-num-case (list div 1) env)))
 		(is (= -1 (run-num-case (list div -1) env)))
 		(is (= 1/2 (run-num-case (list div 2) env)))

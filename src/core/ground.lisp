@@ -17,12 +17,16 @@
 
 (uiop:define-package :abyss/ground
 	(:use :cl)
-	(:import-from :abyss/types
-		:make-app :+eff-ret+ :+eff-exn+ :+eff-fix+ :make-glyph :tid-name
-		:+tid-type-id+ :+tid-null+ :+tid-inert+ :+tid-ignore+ :+tid-boole+
-		:+tid-cons+ :+tid-symbol+ :+tid-environment+ :+tid-continuation+
-		:+tid-operative+ :+tid-applicative+ :+tid-effect+ :+tid-handler+
-		:+tid-record+ :+tid-string+ :+tid-integer+ :+tid-ratio+
+	(:mix
+		:abyss/types
+		:abyss/error
+		:abyss/operatives
+		:abyss/applicatives
+		:abyss/handlers
+		:abyss/boole
+		:abyss/numbers
+		:abyss/lists
+		:abyss/record
 	)
 	(:import-from :abyss/environment
 		:make-environment :env-table
@@ -32,42 +36,6 @@
 	)
 	(:import-from :abyss/context
 		:normal-pass
-	)
-	(:import-from :abyss/operatives
-		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
-		:let-impl :let*-impl
-	)
-	(:import-from :abyss/applicatives
-		:eval-impl :wrap-impl :unwrap-impl :make-env-impl :apply-impl
-		:current-env-impl :ignore-p-impl :inert-p-impl :symbol-p-impl
-		:oper-p-impl :app-p-impl :comb-p-impl :env-p-impl
-		:type-of-impl :type-id-p-impl
-	)
-	(:import-from :abyss/handlers
-		:eff-p-impl :cont-p-impl :handler-p-impl
-		:make-eff-impl :make-eff/k-impl :throw-impl :recover-impl
-		:resume-impl :resume/h-impl :resume/call-impl :resume/call+h-impl
-		:handler-impl :handler/s-impl :with-impl
-	)
-	(:import-from :abyss/boole
-		:not-impl :and-app-impl :or-app-impl :and-oper-impl :or-oper-impl
-		:eq-impl :boole-p-impl
-	)
-	(:import-from :abyss/numbers
-		:int-p-impl :rat-p-impl :num-p-impl
-		:add-impl :sub-impl :mul-impl :div-impl
-		:min-impl :max-impl :mod-impl :rem-impl
-		:abs-impl :num-impl :den-impl
-		:=impl :<impl :>impl :<=impl :>=impl
-	)
-	(:import-from :abyss/lists
-		:null-p-impl :cons-p-impl :list-p-impl
-		:cons-impl :list-impl :list*-impl :list-len-impl
-		:first-impl :second-impl :third-impl :nth-impl
-		:tail-impl :nth-tail-impl :last-impl :last-n-impl
-	)
-	(:import-from :abyss/record
-		:record-p-impl :record-impl :record-set-impl
 	)
 	(:export
 		:ground-env :extend-ground :extend-ground-app
@@ -96,7 +64,7 @@
 			(abyss/context::continuation +tid-continuation+)
 			(abyss/types::effect +tid-effect+)
 			(abyss/handlers::handler-type +tid-handler+)
-			(abyss/types::record +tid-record+)
+			(abyss/types::record (record-subtype x))
 			(abyss/types::type-id +tid-type-id+)
 			(t (print (type-of x)) (error "Unknown type"))
 		))
@@ -209,14 +177,34 @@
 				; records
 				(list "record?" (make-app #'record-p-impl))
 				(list "$record" #'record-impl)
+				(list "$record-subtype" #'record-subtype-impl)
 				(list "$record!" #'record-set-impl)
+				(list "make-type-exn" (make-app #'make-type-exn-impl))
+				(list "make-bounds-exn" (make-app #'make-bounds-exn-impl))
+				(list "sym-not-found?" (make-app #'sym-not-found-p-impl))
+				(list "invalid-combiner?" (make-app #'invalid-comb-p-impl))
+				(list "improper-list?" (make-app #'improper-list-p-impl))
+				(list "match-param?" (make-app #'match-param-p-impl))
+				(list "match-cons?" (make-app #'match-cons-p-impl))
+				(list "match-null?" (make-app #'match-null-p-impl))
+				(list "match-repeat?" (make-app #'match-repeat-p-impl))
+				(list "bad-continuation?" (make-app #'bad-cont-p-impl))
+				(list "bad-handler-case?" (make-app #'bad-handler-p-impl))
+				(list "type-exn?" (make-app #'type-exn-p-impl))
+				(list "div-by-zero?" (make-app #'div-zero-p-impl))
+				(list "bounds-exn?" (make-app #'bounds-exn-p-impl))
 			))
 		(mapcar (lambda (x) (setf (gethash (tid-name x) table) x))
 			(list
 				+tid-type-id+ +tid-null+ +tid-inert+ +tid-ignore+ +tid-cons+
 				+tid-boole+ +tid-symbol+ +tid-environment+ +tid-continuation+
 				+tid-operative+ +tid-applicative+ +tid-effect+ +tid-handler+
-				+tid-record+ +tid-string+ +tid-integer+ +tid-ratio+))
+				+tid-record+ +tid-string+ +tid-integer+ +tid-ratio+
+				+tid-sym-not-found+ +tid-invalid-comb+ +tid-improper-list+
+				+tid-match-param+ +tid-match-repeat+ +tid-match-null+
+				+tid-match-cons+ +tid-bad-cont+ +tid-bad-handler+
+				+tid-type-exn+ +tid-div-zero+ +tid-bounds-exn+
+				))
 		env
 	)
 )
