@@ -33,7 +33,6 @@
 		:bad-tail :bind-params :boole-branch :type-pred-body
 	)
 	(:export
-		:int-p-impl :rat-p-impl :num-p-impl
 		:add-impl :sub-impl :mul-impl :div-impl
 		:min-impl :max-impl :mod-impl :rem-impl
 		:abs-impl :num-impl :den-impl
@@ -44,18 +43,6 @@
 
 (defvar +tid-number+ (list +tid-integer+ +tid-ratio+))
 (defvar +tid-rational+ (list +tid-integer+ +tid-ratio+))
-
-(defun int-p-impl (args)
-	(type-pred-body args x (integerp x))
-)
-
-(defun rat-p-impl (args)
-	(type-pred-body args x (rationalp x))
-)
-
-(defun num-p-impl (args)
-	(type-pred-body args x (realp x))
-)
 
 (defun add-impl (args)
 	(bind-params args (nil . tail)

@@ -106,18 +106,7 @@
 				(list "make-environment" (make-app #'make-env-impl))
 				(list "apply" (make-app #'apply-impl))
 				(list "current-environment" (make-app #'current-env-impl))
-				(list "ignore?" (make-app #'ignore-p-impl))
-				(list "inert?" (make-app #'inert-p-impl))
-				(list "symbol?" (make-app #'symbol-p-impl))
-				(list "operative?" (make-app #'oper-p-impl))
-				(list "applicative?" (make-app #'app-p-impl))
-				(list "combiner?" (make-app #'comb-p-impl))
-				(list "environment?" (make-app #'env-p-impl))
-				(list "type-id?" (make-app #'type-id-p-impl))
 				; handlers
-				(list "effect?" (make-app #'eff-p-impl))
-				(list "continuation?" (make-app #'cont-p-impl))
-				(list "handler?" (make-app #'handler-p-impl))
 				(list "make-effect" (make-app #'make-eff/k-impl))
 				(list "make-abortive-effect" (make-app #'make-eff-impl))
 				(list "throw" (make-app #'throw-impl))
@@ -133,7 +122,6 @@
 				(list "exn" +eff-exn+)
 				(list "fix" +eff-fix+)
 				; boole
-				(list "boole?" (make-app #'boole-p-impl))
 				(list "not?" (make-app #'not-impl))
 				(list "and?" (make-app #'and-app-impl))
 				(list "or?" (make-app #'or-app-impl))
@@ -141,9 +129,6 @@
 				(list "$and?" #'and-oper-impl)
 				(list "$or?" #'or-oper-impl)
 				; numbers
-				(list "integer?" (make-app #'int-p-impl))
-				(list "rational?" (make-app #'rat-p-impl))
-				(list "number?" (make-app #'num-p-impl))
 				(list "+" (make-app #'add-impl))
 				(list "-" (make-app #'sub-impl))
 				(list "*" (make-app #'mul-impl))
@@ -160,11 +145,8 @@
 				(list "<=?" (make-app #'<=impl))
 				(list ">=?" (make-app #'>=impl))
 				; lists
-				(list "null?" (make-app #'null-p-impl))
-				(list "cons?" (make-app #'cons-p-impl))
-				(list "list?" (make-app #'list-p-impl))
-				(list "list1" (make-app #'cons-impl))
-				(list "list0" (make-app #'list-impl))
+				(list "cons" (make-app #'cons-impl))
+				(list "list" (make-app #'list-impl))
 				(list "list*" (make-app #'list*-impl))
 				(list "list-len" (make-app #'list-len-impl))
 				(list "first" (make-app #'first-impl))
@@ -176,35 +158,24 @@
 				(list "last" (make-app #'last-impl))
 				(list "last-n" (make-app #'last-n-impl))
 				; records
-				(list "record?" (make-app #'record-p-impl))
 				(list "$record" #'record-impl)
 				(list "$record-subtype" #'record-subtype-impl)
 				(list "$record!" #'record-set-impl)
 				(list "make-type-exn" (make-app #'make-type-exn-impl))
 				(list "make-bounds-exn" (make-app #'make-bounds-exn-impl))
-				(list "sym-not-found?" (make-app #'sym-not-found-p-impl))
-				(list "invalid-combiner?" (make-app #'invalid-comb-p-impl))
-				(list "improper-list?" (make-app #'improper-list-p-impl))
-				(list "match-param?" (make-app #'match-param-p-impl))
-				(list "match-cons?" (make-app #'match-cons-p-impl))
-				(list "match-null?" (make-app #'match-null-p-impl))
-				(list "match-repeat?" (make-app #'match-repeat-p-impl))
-				(list "bad-continuation?" (make-app #'bad-cont-p-impl))
-				(list "bad-handler-case?" (make-app #'bad-handler-p-impl))
-				(list "type-exn?" (make-app #'type-exn-p-impl))
-				(list "div-by-zero?" (make-app #'div-zero-p-impl))
-				(list "bounds-exn?" (make-app #'bounds-exn-p-impl))
-				(list "repeat-export?" (make-app #'export-exn-p-impl))
 				; modules
 				(list "$export" #'export-impl)
 				(list "$import" #'import-impl)
 			))
-		(mapcar (lambda (x) (setf (gethash (tid-name x) table) x))
+		(mapcar (lambda (x)
+			(setf (gethash (make-glyph
+				(concatenate 'string (glyph-str (tid-name x)) "?")) table) x))
 			(list
 				+tid-type-id+ +tid-null+ +tid-inert+ +tid-ignore+ +tid-cons+
 				+tid-boole+ +tid-symbol+ +tid-environment+ +tid-continuation+
 				+tid-operative+ +tid-applicative+ +tid-effect+ +tid-handler+
-				+tid-record+ +tid-string+ +tid-integer+ +tid-ratio+
+				+tid-record+ +tid-string+ +tid-list+
+				+tid-integer+ +tid-ratio+ +tid-rational+ +tid-number+
 				+tid-sym-not-found+ +tid-invalid-comb+ +tid-improper-list+
 				+tid-match-param+ +tid-match-repeat+ +tid-match-null+
 				+tid-match-cons+ +tid-bad-cont+ +tid-bad-handler+

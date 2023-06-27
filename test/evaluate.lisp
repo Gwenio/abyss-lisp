@@ -1,14 +1,7 @@
 
 (uiop:define-package :abyss/test/evaluate
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:make-app :+eff-exn+ :+eff-fix+ :+eff-ret+ :make-glyph
-		:make-environment :env-table
-	)
-	(:import-from :abyss/error
-		:invalid-comb-p :sym-not-found-p
-	)
+	(:mix :fiveam :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:initial-context :normal-pass
 	)
@@ -57,8 +50,9 @@
 	(let ((env (make-environment nil)))
 		(setf (gethash +x+ (env-table env)) nil)
 		(is (null (run-eval-case +x+ env)))
-		(is (sym-not-found-p
-			(run-eval-case +f+ env)))
+		(is (exn-type-p
+			(run-eval-case +f+ env)
+			+tid-sym-not-found+))
 	)
 )
 
@@ -107,8 +101,17 @@
 
 (test eval-invalid-comb
 	(let ((empty (make-environment nil)))
-		(is (invalid-comb-p
-			(run-eval-case (cons nil nil) empty))
+		(is (exn-type-p
+			(run-eval-case (cons nil nil) empty)
+			+tid-invalid-comb+)
+		)
+	)
+)
+
+(test eval-type-pred
+	(let ((empty (make-environment nil)))
+		(is (eq +true+
+			(run-eval-case (list +tid-type-id+ +tid-type-id+) empty))
 		)
 	)
 )

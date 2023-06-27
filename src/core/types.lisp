@@ -22,14 +22,16 @@
 		:make-effect :effect-p :effect-name :effect-resumable
 		:make-app :app-comb :applicative
 		:make-record :record-p :record-obj :record-subtype
-		:make-glyph :glyph-p
+		:make-glyph :glyph-p :glyph-str
 		:make-environment :environment-p :env-table :env-parent
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
-		:make-type-id :type-id-p :tid-name
+		:make-type-id :type-id-p :tid-name :tid-pred
 		:+tid-type-id+ :+tid-null+ :+tid-inert+ :+tid-ignore+ :+tid-boole+
-		:+tid-cons+ :+tid-symbol+ :+tid-environment+ :+tid-continuation+
-		:+tid-operative+ :+tid-applicative+ :+tid-effect+ :+tid-handler+
-		:+tid-record+ :+tid-string+ :+tid-integer+ :+tid-ratio+
+		:+tid-cons+ :+tid-symbol+ :+tid-environment+ :+tid-list+
+		:+tid-operative+ :+tid-applicative+ :+tid-effect+
+		:+tid-record+ :+tid-string+
+		:+tid-integer+ :+tid-ratio+ :+tid-rational+ :+tid-number+
+		:def-simple-type-id
 	)
 )
 (in-package :abyss/types)
@@ -93,11 +95,16 @@
 )
 
 (defstruct (type-id
-		(:constructor make-tid-aux (name))
+		(:constructor make-type-id (name pred))
 		(:conc-name tid-)
+		(:predicate type-id-p)
 	)
 	(name (error "type-id requires `name`")
 		:type glyph
+		:read-only t
+	)
+	(pred (error "type-id requires `pred`")
+		:type (function (t type-id) boole-type)
 		:read-only t
 	)
 )
@@ -146,32 +153,43 @@
 ; initialize stateful handler
 (defvar +eff-init+ (make-effect (make-glyph "init") t))
 
-(declaim (ftype (function (string) type-id) make-type-id))
+(declaim (ftype (function ((function (t) t)) (function (t type-id) t))
+	simple-type-p))
 
-(defun make-type-id (name)
-	(make-tid-aux (make-glyph name))
+(defun simple-type-p (pred)
+	(lambda (x _tid)
+		(declare (ignore _tid))
+		(funcall pred x)
+	)
+)
+
+(defmacro def-simple-type-id (var name pred)
+	`(defvar ,var (make-type-id (make-glyph ,name) (simple-type-p #',pred)))
 )
 
 (declaim (type type-id +tid-type-id+ +tid-null+ +tid-inert+ +tid-ignore+
-	+tid-cons+ +tid-boole+ +tid-symbol+ +tid-environment+ +tid-continuation+
-	+tid-operative+ +tid-applicative+ +tid-effect+ +tid-handler+ +tid-record+
+	+tid-cons+ +tid-boole+ +tid-symbol+ +tid-environment+
+	+tid-operative+ +tid-applicative+ +tid-effect+ +tid-record+
 	+tid-string+ +tid-integer+ +tid-ratio+
 ))
 
-(defvar +tid-type-id+ (make-type-id "type-id"))
-(defvar +tid-null+ (make-type-id "null"))
-(defvar +tid-inert+ (make-type-id "inert"))
-(defvar +tid-ignore+ (make-type-id "ignore"))
-(defvar +tid-cons+ (make-type-id "cons"))
-(defvar +tid-boole+ (make-type-id "boole"))
-(defvar +tid-symbol+ (make-type-id "symbol"))
-(defvar +tid-environment+ (make-type-id "environment"))
-(defvar +tid-continuation+ (make-type-id "continuation"))
-(defvar +tid-operative+ (make-type-id "operative"))
-(defvar +tid-applicative+ (make-type-id "applicative"))
-(defvar +tid-effect+ (make-type-id "effect"))
-(defvar +tid-handler+ (make-type-id "handler"))
-(defvar +tid-record+ (make-type-id "record"))
-(defvar +tid-string+ (make-type-id "string"))
-(defvar +tid-integer+ (make-type-id "integer"))
-(defvar +tid-ratio+ (make-type-id "ratio"))
+(def-simple-type-id +tid-type-id+ "type-id" type-id-p)
+(def-simple-type-id +tid-null+ "null" null)
+(def-simple-type-id +tid-inert+ "inert" inert-p)
+(def-simple-type-id +tid-ignore+ "ignore" ignore-p)
+(def-simple-type-id +tid-cons+ "cons" consp)
+(def-simple-type-id +tid-list+ "list" listp)
+(def-simple-type-id +tid-boole+ "boole" boole-type-p)
+(def-simple-type-id +tid-symbol+ "symbol" symbolp)
+(def-simple-type-id +tid-environment+ "environment" environment-p)
+(def-simple-type-id +tid-operative+ "operative" functionp)
+(def-simple-type-id +tid-applicative+ "applicative" applicative-p)
+(def-simple-type-id +tid-effect+ "effect" effect-p)
+(def-simple-type-id +tid-record+ "record" record-p)
+(def-simple-type-id +tid-string+ "string" stringp)
+(def-simple-type-id +tid-integer+ "integer" integerp)
+(def-simple-type-id +tid-rational+ "rational" rationalp)
+(def-simple-type-id +tid-number+ "number" realp)
+(defvar +tid-ratio+ (make-type-id
+	(make-glyph "ratio")
+	(lambda (x _tid) (declare (ignore _tid)) (typep 'ratio x))))

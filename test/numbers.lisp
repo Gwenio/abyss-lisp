@@ -1,14 +1,7 @@
 
 (uiop:define-package :abyss/test/numbers
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:+true+ :+false+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
-		:make-environment
-	)
-	(:import-from :abyss/error
-		:match-cons-p
-	)
+	(:mix :fiveam :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:initial-context
 	)
@@ -57,7 +50,7 @@
 
 (test num-sub
 	(let ((env (make-environment nil)) (sub (make-app #'sub-impl)))
-		(is (match-cons-p (run-num-case (list sub) env)))
+		(is (exn-type-p (run-num-case (list sub) env) +tid-match-cons+))
 		(is (= -1 (run-num-case (list sub 1) env)))
 		(is (= 1 (run-num-case (list sub -1) env)))
 		(is (= -1 (run-num-case (list sub 1 2) env)))
@@ -82,7 +75,7 @@
 
 (test num-div
 	(let ((env (make-environment nil)) (div (make-app #'div-impl)))
-		(is (match-cons-p (run-num-case (list div) env)))
+		(is (exn-type-p (run-num-case (list div) env) +tid-match-cons+))
 		(is (= 1 (run-num-case (list div 1) env)))
 		(is (= -1 (run-num-case (list div -1) env)))
 		(is (= 1/2 (run-num-case (list div 2) env)))

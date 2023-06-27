@@ -1,10 +1,7 @@
 
 (uiop:define-package :abyss/test/applicatives
 	(:use :cl)
-	(:mix :fiveam :abyss/types)
-	(:import-from :abyss/error
-		:match-cons-p :type-exn-p
-	)
+	(:mix :fiveam :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:initial-context :normal-pass
 	)
@@ -51,19 +48,20 @@
 					nil)
 				env)))
 		)
-		(is (match-cons-p
+		(is (exn-type-p
 			(run-app-case
 				(list* (make-app #'apply-impl)
 					(make-app #'current-env-impl)
 					nil env)
-				env))
+				env)
+			+tid-match-cons+)
 		)
 		(let ((exn (run-app-case
 				(list (make-app #'apply-impl)
 					#'current-env-impl
 					nil)
 				env)))
-			(is (type-exn-p exn))
+			(is (exn-type-p exn +tid-type-exn+))
 			(is (eq +tid-applicative+
 				(gethash (make-glyph "expected") (record-obj exn))))
 		)
@@ -72,7 +70,7 @@
 					(make-app #'current-env-impl)
 					nil t)
 				env)))
-			(is (type-exn-p exn))
+			(is (exn-type-p exn +tid-type-exn+))
 			(is (eq +tid-environment+
 				(gethash (make-glyph "expected") (record-obj exn))))
 		)

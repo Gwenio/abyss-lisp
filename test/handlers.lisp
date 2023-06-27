@@ -1,10 +1,7 @@
 
 (uiop:define-package :abyss/test/handlers
 	(:use :cl)
-	(:mix :fiveam :abyss/types)
-	(:import-from :abyss/error
-		:sym-not-found-p
-	)
+	(:mix :fiveam :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:initial-context
 	)
@@ -73,7 +70,7 @@
 						(list +p+ t)))
 				(make-environment nil)))
 		)
-		(is (sym-not-found-p
+		(is (exn-type-p
 			(run-h-case ; check continuation is not bound for non-resumable
 				(list #'seq-impl
 					(list #'define-impl +ep+
@@ -81,7 +78,8 @@
 					(list #'with-impl
 						(list #'handler-impl +k+ +exk+)
 						(list +p+ t)))
-				(make-environment nil)))
+				(make-environment nil))
+			+tid-sym-not-found+)
 		)
 	)
 )

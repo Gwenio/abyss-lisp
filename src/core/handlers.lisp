@@ -39,6 +39,7 @@
 		:make-eff-impl :make-eff/k-impl :throw-impl :recover-impl
 		:resume-impl :resume/h-impl :resume/call-impl :resume/call+h-impl
 		:handler-impl :handler/s-impl :with-impl
+		:+tid-continuation+ :+tid-handler+
 	)
 )
 (in-package :abyss/handlers)
@@ -64,6 +65,11 @@
 		:type function :read-only t)
 	(init nil :read-only t)
 )
+
+(declaim (type abyss/types::type-id +tid-handler+ +tid-continuation+))
+
+(def-simple-type-id +tid-continuation+ "continuation" continuation-p)
+(def-simple-type-id +tid-handler+ "handler" handler-p)
 
 (defun handler-p-impl (args)
 	(type-pred-body args x (handler-p x))

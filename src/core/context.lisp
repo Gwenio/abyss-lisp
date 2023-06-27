@@ -17,7 +17,7 @@
 
 (uiop:define-package :abyss/context
 	(:use :cl)
-	(:import-from :abyss/types :+eff-exn+ :+eff-fix+ :+eff-ret+)
+	(:mix :abyss/types)
 	(:import-from :abyss/error :make-bad-cont)
 	(:export :shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass

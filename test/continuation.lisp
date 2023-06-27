@@ -1,13 +1,7 @@
 
 (uiop:define-package :abyss/test/continuation
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:make-effect :+eff-exn+ :+eff-fix+ :+eff-ret+
-	)
-	(:import-from :abyss/error
-		:bad-cont-p
-	)
+	(:mix :fiveam :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:fresh-context :initial-context :push-frame :normal-pass
 		:perform-effect :perform-effect/k
@@ -106,8 +100,9 @@
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (resume-cont t x)))
-				(is (bad-cont-p
-					(perform-effect/k nil +eff-dummy+))
+				(is (exn-type-p
+					(perform-effect/k nil +eff-dummy+)
+					+tid-bad-cont+)
 				)
 			)
 			#'test-handler-bad)

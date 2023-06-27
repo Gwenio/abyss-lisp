@@ -17,27 +17,35 @@
 
 (uiop:define-package :abyss/error
 	(:use :cl)
-	(:import-from :abyss/types
-		:make-record :record-p :record-obj :record-subtype
-		:make-type-id :make-glyph :make-record
-	)
+	(:mix :abyss/types)
 	(:export
-		:+tid-sym-not-found+ :sym-not-found-p :make-sym-not-found
-		:+tid-invalid-comb+ :invalid-comb-p :make-invalid-comb
-		:+tid-improper-list+ :improper-list-p :make-improper-list
-		:+tid-match-param+ :match-param-p :make-match-param
-		:+tid-match-repeat+ :match-repeat-p :make-match-repeat
-		:+tid-match-cons+ :match-cons-p :make-match-cons
-		:+tid-match-null+ :match-null-p :make-match-null
-		:+tid-bad-cont+ :bad-cont-p :make-bad-cont
-		:+tid-bad-handler+ :bad-handler-p :make-bad-handler
-		:+tid-type-exn+ :type-exn-p :make-type-exn
-		:+tid-div-zero+ :div-zero-p :make-div-zero
-		:+tid-bounds-exn+ :bounds-exn-p :make-bounds-exn
-		:+tid-export-exn+ :export-exn-p :make-export-exn
+		:exn-type-p
+		:+tid-sym-not-found+ :make-sym-not-found
+		:+tid-invalid-comb+ :make-invalid-comb
+		:+tid-improper-list+ :make-improper-list
+		:+tid-match-param+ :make-match-param
+		:+tid-match-repeat+ :make-match-repeat
+		:+tid-match-cons+ :make-match-cons
+		:+tid-match-null+ :make-match-null
+		:+tid-bad-cont+ :make-bad-cont
+		:+tid-bad-handler+ :make-bad-handler
+		:+tid-type-exn+ :make-type-exn
+		:+tid-div-zero+ :make-div-zero
+		:+tid-bounds-exn+ :make-bounds-exn
+		:+tid-export-exn+ :make-export-exn
 	)
 )
 (in-package :abyss/error)
+
+(declaim (ftype (function (t abyss/types::type-id) t) exn-type-p))
+
+(defun exn-type-p (x tid)
+	(and (record-p x) (eq tid (record-subtype x)))
+)
+
+(defmacro def-exn-id (var name)
+	`(defvar ,var (make-type-id (make-glyph ,name) #'exn-type-p))
+)
 
 (declaim (type abyss/types::type-id
 	+tid-sym-not-found+ +tid-invalid-comb+ +tid-improper-list+
@@ -46,23 +54,19 @@
 	+tid-type-exn+ +tid-div-zero+ +tid-bounds-exn+ +tid-export-exn+
 ))
 
-(defvar +tid-sym-not-found+ (make-type-id "sym-not-found"))
-(defvar +tid-invalid-comb+ (make-type-id "invalid-combiner"))
-(defvar +tid-improper-list+ (make-type-id "improper-list"))
-(defvar +tid-match-param+ (make-type-id "match-param"))
-(defvar +tid-match-repeat+ (make-type-id "match-repeat"))
-(defvar +tid-match-null+ (make-type-id "match-null"))
-(defvar +tid-match-cons+ (make-type-id "match-cons"))
-(defvar +tid-bad-cont+ (make-type-id "bad-continuation"))
-(defvar +tid-bad-handler+ (make-type-id "bad-handler-case"))
-(defvar +tid-type-exn+ (make-type-id "type-exn"))
-(defvar +tid-div-zero+ (make-type-id "div-by-zero"))
-(defvar +tid-bounds-exn+ (make-type-id "bounds-exn"))
-(defvar +tid-export-exn+ (make-type-id "repeat-export"))
-
-(defmacro exn-pred (x tid)
-	`(and (record-p ,x) (eq ,tid (record-subtype ,x)))
-)
+(def-exn-id +tid-sym-not-found+ "sym-not-found")
+(def-exn-id +tid-invalid-comb+ "invalid-combiner")
+(def-exn-id +tid-improper-list+ "improper-list")
+(def-exn-id +tid-match-param+ "match-param")
+(def-exn-id +tid-match-repeat+ "match-repeat")
+(def-exn-id +tid-match-null+ "match-null")
+(def-exn-id +tid-match-cons+ "match-cons")
+(def-exn-id +tid-bad-cont+ "bad-continuation")
+(def-exn-id +tid-bad-handler+ "bad-handler-case")
+(def-exn-id +tid-type-exn+ "type-exn")
+(def-exn-id +tid-div-zero+ "div-by-zero")
+(def-exn-id +tid-bounds-exn+ "bounds-exn")
+(def-exn-id +tid-export-exn+ "repeat-export")
 
 (defmacro init-field (table field val)
 	`(setf (gethash ,field ,table) ,val)
@@ -86,19 +90,11 @@
 	)
 )
 
-(defun sym-not-found-p (x)
-	(exn-pred x +tid-sym-not-found+)
-)
-
 (defun make-invalid-comb (obj)
 	(let* ((rec (make-record +tid-invalid-comb+)) (table (record-obj rec)))
 		(init-field table +obj+ obj)
 		rec
 	)
-)
-
-(defun invalid-comb-p (x)
-	(exn-pred x +tid-invalid-comb+)
 )
 
 (defun make-improper-list (tail result)
@@ -109,19 +105,11 @@
 	)
 )
 
-(defun improper-list-p (x)
-	(exn-pred x +tid-improper-list+)
-)
-
 (defun make-match-param (obj)
 	(let* ((rec (make-record +tid-match-param+)) (table (record-obj rec)))
 		(init-field table +obj+ obj)
 		rec
 	)
-)
-
-(defun match-param-p (x)
-	(exn-pred x +tid-match-param+)
 )
 
 (defun make-match-cons (obj)
@@ -131,19 +119,11 @@
 	)
 )
 
-(defun match-cons-p (x)
-	(exn-pred x +tid-match-cons+)
-)
-
 (defun make-match-null (obj)
 	(let* ((rec (make-record +tid-match-null+)) (table (record-obj rec)))
 		(init-field table +obj+ obj)
 		rec
 	)
-)
-
-(defun match-null-p (x)
-	(exn-pred x +tid-match-null+)
 )
 
 (defun make-match-repeat (obj)
@@ -153,10 +133,6 @@
 	)
 )
 
-(defun match-repeat-p (x)
-	(exn-pred x +tid-match-repeat+)
-)
-
 (defun make-bad-cont (obj)
 	(let* ((rec (make-record +tid-bad-cont+)) (table (record-obj rec)))
 		(init-field table +obj+ obj)
@@ -164,19 +140,11 @@
 	)
 )
 
-(defun bad-cont-p (x)
-	(exn-pred x +tid-bad-cont+)
-)
-
 (defun make-bad-handler (obj)
 	(let* ((rec (make-record +tid-bad-handler+)) (table (record-obj rec)))
 		(init-field table +obj+ obj)
 		rec
 	)
-)
-
-(defun bad-handler-p (x)
-	(exn-pred x +tid-bad-handler+)
 )
 
 (defun make-type-exn (obj expect)
@@ -187,19 +155,11 @@
 	)
 )
 
-(defun type-exn-p (x)
-	(exn-pred x +tid-type-exn+)
-)
-
 (defun make-div-zero (n)
 	(let* ((rec (make-record +tid-div-zero+)) (table (record-obj rec)))
 		(init-field table +val+ n)
 		rec
 	)
-)
-
-(defun div-zero-p (x)
-	(exn-pred x +tid-div-zero+)
 )
 
 (defun make-bounds-exn (n lower upper)
@@ -211,10 +171,6 @@
 	)
 )
 
-(defun bounds-exn-p (x)
-	(exn-pred x +tid-bounds-exn+)
-)
-
 (defun make-export-exn (sym old new)
 	(let* ((rec (make-record +tid-export-exn+)) (table (record-obj rec)))
 		(init-field table +sym+ sym)
@@ -222,8 +178,4 @@
 		(init-field table +new+ new)
 		rec
 	)
-)
-
-(defun export-exn-p (x)
-	(exn-pred x +tid-export-exn+)
 )

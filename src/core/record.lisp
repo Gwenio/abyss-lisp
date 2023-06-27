@@ -60,17 +60,11 @@
 	)
 )
 
-(declaim (ftype
-	(function (abyss/types::type-id)
-		(function ((cons abyss/types::environment t)) t))
-	record-subtype-pred))
+(declaim (ftype (function (t abyss/types::type-id) t) record-subtype-p))
 
-(defun record-subtype-pred (tid)
-	(lambda (args)
-		(type-pred-body args x (and
-			(record-p x)
-			(eq tid (record-subtype x))))
-	)
+(defun record-subtype-p (x tid)
+	(and (record-p x)
+		(eq tid (record-subtype x)))
 )
 
 (declaim (ftype (function ((cons abyss/types::environment t)) t)
@@ -79,10 +73,10 @@
 (defun record-subtype-impl (args)
 	(bind-params args (nil name bindings)
 		(if (glyph-p name)
-			(let ((tid (abyss/types::make-tid-aux name)))
-				(normal-pass (list tid
+			(let ((tid (abyss/types::make-type-id name #'record-subtype-p)))
+				(normal-pass (list
 					(make-app (record-subtype-construct tid bindings))
-					(make-app (record-subtype-pred tid))))
+					tid))
 			)
 			(throw-exn (make-type-exn name +tid-symbol+))
 		)
@@ -133,56 +127,4 @@
 	(bind-params args (nil n lower upper)
 		(normal-pass (make-bounds-exn n lower upper))
 	)
-)
-
-(defun sym-not-found-p-impl (args)
-	(type-pred-body args x (sym-not-found-p x))
-)
-
-(defun invalid-comb-p-impl (args)
-	(type-pred-body args x (invalid-comb-p x))
-)
-
-(defun improper-list-p-impl (args)
-	(type-pred-body args x (improper-list-p x))
-)
-
-(defun match-param-p-impl (args)
-	(type-pred-body args x (match-param-p x))
-)
-
-(defun match-cons-p-impl (args)
-	(type-pred-body args x (match-cons-p x))
-)
-
-(defun match-null-p-impl (args)
-	(type-pred-body args x (match-null-p x))
-)
-
-(defun match-repeat-p-impl (args)
-	(type-pred-body args x (match-repeat-p x))
-)
-
-(defun bad-cont-p-impl (args)
-	(type-pred-body args x (bad-cont-p x))
-)
-
-(defun bad-handler-p-impl (args)
-	(type-pred-body args x (bad-handler-p x))
-)
-
-(defun type-exn-p-impl (args)
-	(type-pred-body args x (type-exn-p x))
-)
-
-(defun div-zero-p-impl (args)
-	(type-pred-body args x (div-zero-p x))
-)
-
-(defun bounds-exn-p-impl (args)
-	(type-pred-body args x (bounds-exn-p x))
-)
-
-(defun export-exn-p-impl (args)
-	(type-pred-body args x (export-exn-p x))
 )

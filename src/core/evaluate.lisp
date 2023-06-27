@@ -17,11 +17,7 @@
 
 (uiop:define-package :abyss/evaluate
 	(:use :cl)
-	(:mix :abyss/types)
-	(:import-from :abyss/error
-		:make-invalid-comb
-		:make-sym-not-found
-	)
+	(:mix :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:normal-pass
 		:push-frame
@@ -68,7 +64,7 @@
 			)
 		)
 		(cons
-			(push-frame (precombine env (cons env (cdr x))))
+			(push-frame (precombine env (cdr x)))
 			(evaluate (first x) env)
 		)
 		(t (normal-pass x))
@@ -106,7 +102,7 @@
 )
 
 (declaim (ftype (function
-	(abyss/types::applicative abyss/types::environment cons) t)
+	(abyss/types::applicative abyss/types::environment t) t)
 	combine))
 
 (defun precombine (env args)
@@ -114,13 +110,32 @@
 	(lambda (combiner)
 		(typecase combiner
 			(abyss/types::applicative
-				(combine combiner env args)
+				(combine combiner env (cons env args))
 			)
 			(function
-				(funcall combiner args)
+				(funcall combiner (cons env args))
 			)
 			(abyss/types::record
-				(record-fetch combiner (cdr args))
+				(record-fetch combiner args)
+			)
+			(abyss/types::type-id
+				(if (consp args)
+					(progn
+						(unless (cdr args)
+							(push-frame (lambda (x)
+								(recover-exn (make-improper-list (cdr args) x))
+							))
+						)
+						(push-frame (lambda (x)
+							(if (funcall (tid-pred combiner) x combiner)
+								+true+
+								+false+
+							)
+						))
+						(evaluate (first args) env)
+					)
+					(throw-exn (make-match-cons args))
+				)
 			)
 			; applicatives can only hold functions or applicatives
 			; so only at this point can an invalid combiner be encountered

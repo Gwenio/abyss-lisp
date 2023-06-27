@@ -1,10 +1,7 @@
 
 (uiop:define-package :abyss/test/operatives
 	(:use :cl)
-	(:mix :fiveam :abyss/types)
-	(:import-from :abyss/error
-		:match-null-p :match-cons-p :improper-list-p :type-exn-p
-	)
+	(:mix :fiveam :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:initial-context :normal-pass
 	)
@@ -88,15 +85,17 @@
 			when y
 			do (is (eql x (gethash y table)))
 		)
-		(is (match-null-p
+		(is (exn-type-p
 			(run-oper-case
 				(list #'define-impl nil 1)
-				env))
+				env)
+			+tid-match-null+)
 		)
-		(is (match-cons-p
+		(is (exn-type-p
 			(run-oper-case
 				(list #'define-impl (list +x+) 1)
-				env))
+				env)
+			+tid-match-cons+)
 		)
 	)
 )
@@ -113,10 +112,11 @@
 				(list #'vau-impl nil +ignore+ 1)
 				env))
 		)
-		(is (type-exn-p
+		(is (exn-type-p
 			(run-oper-case
 				(list* #'vau-impl nil +ignore+ 1)
-				env))
+				env)
+			+tid-type-exn+)
 		)
 		(is (inert-p
 			(run-oper-case
@@ -179,10 +179,11 @@
 				(list #'lambda-impl nil 1)
 				env))
 		)
-		(is (type-exn-p
+		(is (exn-type-p
 			(run-oper-case
 				(list* #'lambda-impl nil 1)
-				env))
+				env)
+			+tid-type-exn+)
 		)
 		(is (inert-p
 			(run-oper-case
