@@ -4,8 +4,6 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:+true+ :+false+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
-	)
-	(:import-from :abyss/environment
 		:make-environment
 	)
 	(:import-from :abyss/context

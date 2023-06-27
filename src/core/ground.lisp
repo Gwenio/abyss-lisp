@@ -28,9 +28,6 @@
 		:abyss/lists
 		:abyss/record
 	)
-	(:import-from :abyss/environment
-		:make-environment :env-table
-	)
 	(:import-from :abyss/helpers
 		:bind-params
 	)
@@ -47,7 +44,7 @@
 )
 (in-package :abyss/ground)
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	type-of-impl))
 
 (defun type-of-impl (args)
@@ -63,7 +60,7 @@
 			(abyss/types::ignore-type +tid-ignore+)
 			(abyss/types::boole-type +tid-boole+)
 			(abyss/types::glyph +tid-symbol+)
-			(abyss/environment::environment +tid-environment+)
+			(abyss/types::environment +tid-environment+)
 			(abyss/types::applicative +tid-applicative+)
 			(abyss/context::continuation +tid-continuation+)
 			(abyss/types::effect +tid-effect+)
@@ -75,7 +72,7 @@
 	)
 )
 
-(declaim (type abyss/environment::environment +ground-env+))
+(declaim (type abyss/types::environment +ground-env+))
 
 (defvar +ground-env+
 	(let* ((env (make-environment nil)) (table (env-table env)))
@@ -217,7 +214,7 @@
 	)
 )
 
-(declaim (ftype (function () abyss/environment::environment) ground-env))
+(declaim (ftype (function () abyss/types::environment) ground-env))
 
 (defun ground-env ()
 	(make-environment +ground-env+)

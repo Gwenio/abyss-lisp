@@ -1,16 +1,9 @@
 
 (uiop:define-package :abyss/test/operatives
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:+ignore+ :+true+ :+false+ :applicative-p :make-glyph
-		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
-	)
+	(:mix :fiveam :abyss/types)
 	(:import-from :abyss/error
 		:match-null-p :match-cons-p :improper-list-p :type-exn-p
-	)
-	(:import-from :abyss/environment
-		:make-environment :env-table
 	)
 	(:import-from :abyss/context
 		:initial-context :normal-pass

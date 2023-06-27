@@ -17,25 +17,43 @@
 
 (uiop:define-package :abyss/evaluate
 	(:use :cl)
-	(:import-from :abyss/environment
-		:env-lookup
-	)
-	(:import-from :abyss/types
-		:app-comb :applicative-p :record-p :record-obj :glyph-p
-	)
+	(:mix :abyss/types)
 	(:import-from :abyss/error
-		:make-invalid-comb :make-sym-not-found
+		:make-invalid-comb
+		:make-sym-not-found
 	)
 	(:import-from :abyss/context
-		:normal-pass :push-frame :throw-exn :recover-exn
+		:normal-pass
+		:push-frame
+		:throw-exn
+		:recover-exn
 	)
-	(:export :evaluate)
+	(:export
+		:evaluate
+		:env-lookup
+	)
 )
 (in-package :abyss/evaluate)
 
-(declaim (ftype (function (t abyss/environment::environment) t) evaluate))
+(declaim (ftype (function (abyss/types::environment t) (values t t)) env-lookup))
 
-(declaim (ftype (function (abyss/environment::environment t) function)
+(defun env-lookup (env key)
+	(multiple-value-bind (value found) (gethash key (env-table env))
+		(if found
+			(values t value)
+			(let ((parent (env-parent env)))
+				(if (environment-p parent)
+					(env-lookup parent key)
+					(values nil nil)
+				)
+			)
+		)
+	)
+)
+
+(declaim (ftype (function (t abyss/types::environment) t) evaluate))
+
+(declaim (ftype (function (abyss/types::environment t) function)
 	precombine))
 
 (defun evaluate (x env)
@@ -88,7 +106,7 @@
 )
 
 (declaim (ftype (function
-	(abyss/types::applicative abyss/environment::environment cons) t)
+	(abyss/types::applicative abyss/types::environment cons) t)
 	combine))
 
 (defun precombine (env args)
@@ -122,7 +140,7 @@
 )
 
 (declaim (ftype
-	(function (abyss/environment::environment t function cons) function)
+	(function (abyss/types::environment t function cons) function)
 	eval-map))
 
 (defun eval-map (env next done tail)

@@ -17,15 +17,10 @@
 
 (uiop:define-package :abyss/operatives
 	(:use :cl)
-	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :ignore-p :make-app :glyph-p
-	)
+	(:mix :abyss/types)
 	(:import-from :abyss/error
 		:make-match-cons :make-match-null :make-match-repeat :make-match-param
 		:make-type-exn :make-improper-list
-	)
-	(:import-from :abyss/environment
-		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
 		:normal-pass :push-frame :throw-exn :recover-exn
@@ -42,7 +37,7 @@
 )
 (in-package :abyss/operatives)
 
-(declaim (ftype (function (abyss/environment::environment cons) function)
+(declaim (ftype (function (abyss/types::environment cons) function)
 	seq-aux))
 
 (defun seq-aux (env next)
@@ -59,7 +54,7 @@
 	)
 )
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	seq-impl define-impl vau-impl lambda-impl if-impl cond-impl
 	let-impl let*-impl))
 
@@ -82,7 +77,7 @@
 	)
 )
 
-(declaim (ftype (function (abyss/environment::environment t cons) function)
+(declaim (ftype (function (abyss/types::environment t cons) function)
 	make-closure))
 
 (defun make-closure (static-env formal-params body)
@@ -140,7 +135,7 @@
 	)
 )
 
-(declaim (ftype (function (abyss/environment::environment t t) t)
+(declaim (ftype (function (abyss/types::environment t t) t)
 	if-aux cond-aux))
 
 (defun if-aux (env then else)

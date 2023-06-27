@@ -1,17 +1,9 @@
 
 (uiop:define-package :abyss/test/handlers
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :applicative-p
-		:make-app :inert-p :+eff-exn+ :+eff-fix+ :+eff-ret+
-		:make-glyph
-	)
+	(:mix :fiveam :abyss/types)
 	(:import-from :abyss/error
 		:sym-not-found-p
-	)
-	(:import-from :abyss/environment
-		:make-environment :env-table
 	)
 	(:import-from :abyss/context
 		:initial-context

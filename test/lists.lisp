@@ -1,14 +1,7 @@
 
 (uiop:define-package :abyss/test/lists
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:+ignore+ :+true+ :+false+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
-		:make-glyph
-	)
-	(:import-from :abyss/environment
-		:make-environment :env-table
-	)
+	(:mix :fiveam :abyss/types)
 	(:import-from :abyss/context
 		:initial-context
 	)

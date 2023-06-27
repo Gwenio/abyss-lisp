@@ -4,12 +4,10 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:make-app :+eff-exn+ :+eff-fix+ :+eff-ret+ :make-glyph
+		:make-environment :env-table
 	)
 	(:import-from :abyss/error
 		:invalid-comb-p :sym-not-found-p
-	)
-	(:import-from :abyss/environment
-		:make-environment :env-table
 	)
 	(:import-from :abyss/context
 		:initial-context :normal-pass

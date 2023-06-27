@@ -4,9 +4,12 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:make-glyph
+		:make-environment
+		:environment-p
+		:env-table
 	)
-	(:import-from :abyss/environment
-		:make-environment :environment-p :env-table :env-lookup
+	(:import-from :abyss/evaluate
+		:env-lookup
 	)
 )
 (in-package :abyss/test/environment)

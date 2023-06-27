@@ -5,9 +5,6 @@
 	(:import-from :abyss/error
 		:match-cons-p :type-exn-p
 	)
-	(:import-from :abyss/environment
-		:make-environment :env-table
-	)
 	(:import-from :abyss/context
 		:initial-context :normal-pass
 	)

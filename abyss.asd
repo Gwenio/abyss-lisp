@@ -12,7 +12,6 @@
 			(:file "types")
 			(:file "error")
 			(:file "context")
-			(:file "environment")
 			(:file "evaluate")
 			(:file "helpers")
 			(:file "operatives")
@@ -59,8 +58,8 @@
 	:components (
 		(:file "test")
 		(:file "context")
-		(:file "environment")
 		(:file "continuation")
+		(:file "environment")
 		(:file "evaluate")
 		(:file "operatives")
 		(:file "applicatives")

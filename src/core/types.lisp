@@ -23,6 +23,7 @@
 		:make-app :app-comb :applicative
 		:make-record :record-p :record-obj :record-subtype
 		:make-glyph :glyph-p
+		:make-environment :environment-p :env-table :env-parent
 		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
 		:make-type-id :type-id-p :tid-name
 		:+tid-type-id+ :+tid-null+ :+tid-inert+ :+tid-ignore+ :+tid-boole+
@@ -47,6 +48,22 @@
 		(:constructor make-boole-type (x))
 	)
 	(x nil :read-only t)
+)
+
+(defstruct (environment
+		(:constructor make-environment (parent))
+		(:conc-name env-)
+		(:predicate environment-p)
+	)
+	"Symbol binding environment."
+	(table (make-hash-table :test 'eq)
+		:type hash-table
+		:read-only t
+	)
+	(parent nil
+		:read-only t
+		:type (or environment null)
+	)
 )
 
 (defstruct (applicative

@@ -1,14 +1,7 @@
 
 (uiop:define-package :abyss/test/record
 	(:use :cl)
-	(:mix :fiveam)
-	(:import-from :abyss/types
-		:+true+ :+false+ :+inert+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
-		:make-glyph
-	)
-	(:import-from :abyss/environment
-		:make-environment
-	)
+	(:mix :fiveam :abyss/types)
 	(:import-from :abyss/context
 		:initial-context
 	)

@@ -17,17 +17,10 @@
 
 (uiop:define-package :abyss/applicatives
 	(:use :cl)
-	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :app-comb :glyph-p :type-id-p
-		:+tid-environment+ :+tid-operative+ :+tid-applicative+
-	)
+	(:mix :abyss/types)
 	(:import-from :abyss/error
 		:make-match-cons :make-match-null :make-match-repeat
 		:make-type-exn
-	)
-	(:import-from :abyss/environment
-		:make-environment :environment-p
 	)
 	(:import-from :abyss/context
 		:normal-pass :throw-exn
@@ -107,7 +100,7 @@
 	)
 )
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	current-env-impl))
 
 (defun current-env-impl (args)

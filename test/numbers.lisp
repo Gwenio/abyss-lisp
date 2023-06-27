@@ -4,12 +4,10 @@
 	(:mix :fiveam)
 	(:import-from :abyss/types
 		:+true+ :+false+ :make-app :+eff-exn+ :+eff-fix+ :+eff-ret+
+		:make-environment
 	)
 	(:import-from :abyss/error
 		:match-cons-p
-	)
-	(:import-from :abyss/environment
-		:make-environment
 	)
 	(:import-from :abyss/context
 		:initial-context

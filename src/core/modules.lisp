@@ -18,9 +18,6 @@
 (uiop:define-package :abyss/modules
 	(:use :cl)
 	(:mix :abyss/types :abyss/error)
-	(:import-from :abyss/environment
-		:make-environment :environment-p :env-table
-	)
 	(:import-from :abyss/context
 		:normal-pass :push-frame :fresh-context :resume-cont :resume-cont/call
 		:throw-exn :recover-exn :perform-effect/k
@@ -37,13 +34,13 @@
 )
 (in-package :abyss/modules)
 
-(declaim (type abyss/environment::environment +module-env+))
+(declaim (type abyss/types::environment +module-env+))
 
 (defvar +eff-import+ (make-effect (make-glyph "import") t))
 
 (defvar +eff-export+ (make-effect (make-glyph "export") t))
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	import-impl export-impl))
 
 (defun import-impl (args)
@@ -166,7 +163,7 @@
 	)
 )
 
-(declaim (ftype (function (abyss/environment::environment list cons) t)
+(declaim (ftype (function (abyss/types::environment list cons) t)
 	do-module-part))
 
 (defun do-module-part (env import-list code)

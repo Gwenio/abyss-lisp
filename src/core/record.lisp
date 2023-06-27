@@ -17,12 +17,7 @@
 
 (uiop:define-package :abyss/record
 	(:use :cl)
-	(:import-from :abyss/types
-		:make-record :record-p :record-obj :record-subtype :+inert+ :glyph-p
-		:make-app
-		:+tid-record+ :+tid-symbol+
-	)
-	(:mix :abyss/error)
+	(:mix :abyss/types :abyss/error)
 	(:import-from :abyss/context
 		:push-frame :normal-pass :throw-exn
 	)
@@ -52,7 +47,7 @@
 
 (declaim (ftype
 	(function (abyss/types::type-id t)
-		(function ((cons abyss/environment::environment t)) t))
+		(function ((cons abyss/types::environment t)) t))
 	record-subtype-construct))
 
 (defun record-subtype-construct (tid bindings)
@@ -67,7 +62,7 @@
 
 (declaim (ftype
 	(function (abyss/types::type-id)
-		(function ((cons abyss/environment::environment t)) t))
+		(function ((cons abyss/types::environment t)) t))
 	record-subtype-pred))
 
 (defun record-subtype-pred (tid)
@@ -78,7 +73,7 @@
 	)
 )
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	record-subtype-impl))
 
 (defun record-subtype-impl (args)
@@ -94,7 +89,7 @@
 	)
 )
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	record-impl))
 
 (defun record-impl (args)
@@ -107,7 +102,7 @@
 )
 
 (declaim (ftype
-	(function (abyss/environment::environment t t)
+	(function (abyss/types::environment t t)
 		(function (abyss/types::record) t))
 	record-set-aux))
 
@@ -118,7 +113,7 @@
 	)
 )
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	record-set-impl))
 
 (defun record-set-impl (args)

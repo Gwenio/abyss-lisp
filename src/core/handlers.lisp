@@ -17,19 +17,9 @@
 
 (uiop:define-package :abyss/handlers
 	(:use :cl)
-	(:import-from :abyss/types
-		:+inert+ :+ignore+ :+true+ :+false+ :inert-p :ignore-p :make-app
-		:applicative-p :applicative :app-comb :glyph-p
-		:make-effect :effect-p :effect-name :effect-resumable
-		:+eff-exn+ :+eff-fix+ :+eff-ret+ :+eff-init+
-		:+tid-effect+ :+tid-handler+ :+tid-cons+ :+tid-null+
-		:+tid-continuation+
-	)
+	(:mix :abyss/types)
 	(:import-from :abyss/error
 		:make-match-repeat :make-match-param :make-type-exn :make-bad-handler
-	)
-	(:import-from :abyss/environment
-		:make-environment :environment-p :env-table
 	)
 	(:import-from :abyss/context
 		:fresh-context :normal-pass :push-frame :throw-exn :recover-exn
@@ -53,7 +43,7 @@
 )
 (in-package :abyss/handlers)
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	resume/call-impl resume/call+h-impl handler-impl handler/s-impl with-impl))
 
 (defun eff-p-impl (args)

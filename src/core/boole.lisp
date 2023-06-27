@@ -84,10 +84,10 @@
 	)
 )
 
-(declaim (ftype (function (abyss/environment::environment t) function)
+(declaim (ftype (function (abyss/types::environment t) function)
 	and-oper-aux or-oper-aux))
 
-(declaim (ftype (function ((cons abyss/environment::environment t)) t)
+(declaim (ftype (function ((cons abyss/types::environment t)) t)
 	and-oper-impl or-oper-impl))
 
 (defun and-oper-aux (env next)
