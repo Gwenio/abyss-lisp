@@ -253,7 +253,7 @@
 									(aux x)
 									(normal-pass +false+)
 								)
-								(throw-exn (make-type-exn head +tid-number+))
+								(throw-exn (make-type-exn n +tid-number+))
 							)
 						)
 					)
