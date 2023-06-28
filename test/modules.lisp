@@ -46,15 +46,15 @@
 (test mod-basic
 	(let (x y (foo (make-glyph "foo")) (bar (make-glyph "bar")))
 		(setf x (run-mod-case nil
-			(list (list (make-glyph "$export") (list foo 7)))
+			(list (list (make-glyph "export") (list foo 7)))
 		))
 		(is (hash-table-p x))
 		(is (= (gethash foo x)) 7)
 		(setf y (run-mod-case (list (cons foo x))
 			(list
-				(list (make-glyph "$define!") (list foo)
-					(list (make-glyph "$import") foo foo))
-				(list (make-glyph "$export") (list bar
+				(list (make-glyph "define!") (list foo)
+					(list (make-glyph "import") foo foo))
+				(list (make-glyph "export") (list bar
 					(list (make-glyph "*") 6 foo))))
 		))
 		(is (hash-table-p y))
