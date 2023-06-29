@@ -127,7 +127,10 @@
 		(:int-hex (parse-integer (remove #\' str) :start 2 :radix 16))
 		(:int-bin (parse-integer (remove #\' str) :start 2 :radix 2))
 		(:int-oct (parse-integer (remove #\' str) :start 2 :radix 8))
-		(t (error 'unknown-atom :id id :str str))
+		(t
+			(print (list id str))
+			(error 'unknown-atom :id id :str str)
+		)
 	)
 )
 
