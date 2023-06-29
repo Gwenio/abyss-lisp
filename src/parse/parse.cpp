@@ -167,6 +167,7 @@ tail:
 	default:
 		assert(token::flags(input[cursor]) == token::match::atom);
 		nodes.push_back(node::atom);
+		index.push_back(cursor);
 		goto close;
 	case id::lparen: // error
 		ABYSS_PARSE_ERROR(expect_atom);
