@@ -125,7 +125,7 @@
 				(list "not?" (make-app #'not-impl))
 				(list "and-app?" (make-app #'and-app-impl))
 				(list "or-app?" (make-app #'or-app-impl))
-				(list "eq?" (make-app #'eq-impl))
+				(list "is?" (make-app #'eq-impl))
 				(list "and?" #'and-oper-impl)
 				(list "or?" #'or-oper-impl)
 				; numbers
