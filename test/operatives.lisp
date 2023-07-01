@@ -36,6 +36,7 @@
 (defvar +x+ (make-glyph "x"))
 (defvar +y+ (make-glyph "y"))
 (defvar +z+ (make-glyph "z"))
+(defvar +env+ (make-glyph "env"))
 
 (defmacro run-oper-case (x env)
 	`(initial-context (lambda () (evaluate ,x ,env)) #'root-handler)
@@ -110,6 +111,11 @@
 		(is (functionp
 			(run-oper-case
 				(list #'vau-impl nil +ignore+ 1)
+				env))
+		)
+		(is (functionp
+			(run-oper-case
+				(list #'vau-impl nil +env+ 1)
 				env))
 		)
 		(is (exn-type-p
@@ -356,12 +362,12 @@
 
 (test oper-let*
 	(let ((env (make-environment nil)))
-		(is (eql 0
+		(is (= 0
 			(run-oper-case
 				(list #'let*-impl `((,+x+ 0) (,+y+ ,+x+)) +y+)
 				env))
 		)
-		(is (eql 0
+		(is (= 0
 			(run-oper-case
 				(list #'let*-impl `((,+x+ 0) (,+y+ ,+x+)) +x+)
 				env))

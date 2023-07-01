@@ -98,7 +98,7 @@
 
 (defun vau-impl (args)
 	(bind-params args (env bindings eformal . body)
-		(if (or (keywordp eformal) (ignore-p eformal))
+		(if (or (glyph-p eformal) (ignore-p eformal))
 			(typecase body
 				(cons
 					(normal-pass
@@ -135,7 +135,7 @@
 	)
 )
 
-(declaim (ftype (function (abyss/types::environment t t) t)
+(declaim (ftype (function (abyss/types::environment t t) (function (t) t))
 	if-aux cond-aux))
 
 (defun if-aux (env then else)
