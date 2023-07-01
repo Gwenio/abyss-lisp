@@ -104,7 +104,7 @@
 		:read-only t
 	)
 	(pred (error "type-id requires `pred`")
-		:type (function (t type-id) boole-type)
+		:type (function (t type-id) t)
 		:read-only t
 	)
 )
