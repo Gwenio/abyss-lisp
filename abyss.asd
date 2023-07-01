@@ -22,6 +22,7 @@
 			(:file "handlers")
 			(:file "record")
 			(:file "modules")
+			(:file "print")
 			(:file "ground")
 		))
 	)
