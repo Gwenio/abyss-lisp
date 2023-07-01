@@ -165,5 +165,25 @@
 						`(,g nil)))
 				(make-environment nil)))
 		)
+		(is (equal '(4 . 2)
+			(run-h-case
+				(list #'seq-impl
+					(list #'define-impl res
+						(make-app #'resume-impl))
+					(list #'define-impl c
+						(make-app #'cons-impl))
+					(list #'define-impl (list load g)
+						(list #'make-eff/k-impl "get"))
+					(list #'define-impl (list save s)
+						(list #'make-eff/k-impl "set"))
+					(list #'with-impl
+						(list #'handler/s-impl +k+ (list st)
+							`(,load nil ((,res ,+k+ ,st) ,st))
+							`(,save ,+x+ ((,res ,+k+ ,+inert+) ,+x+)))
+						'(2)
+						`(,s (,c 4 (,g nil)))
+						`(,g nil)))
+				(make-environment nil)))
+		)
 	)
 )

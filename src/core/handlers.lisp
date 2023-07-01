@@ -168,10 +168,10 @@
 )
 
 (defun init-handler-ret-aux (x)
-	(make-app (lambda (_args)
+	(normal-pass (make-app (lambda (_args)
 		(declare (ignore _args))
 		(normal-pass x)
-	))
+	)))
 )
 
 (defun init-handler-aux (args)
