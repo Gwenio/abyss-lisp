@@ -27,6 +27,7 @@
 		:abyss/numbers
 		:abyss/lists
 		:abyss/record
+		:abyss/print
 	)
 	(:import-from :abyss/helpers
 		:bind-params
@@ -107,8 +108,8 @@
 				(list "apply" (make-app #'apply-impl))
 				(list "current-env" (make-app #'current-env-impl))
 				; handlers
-				(list "make-effect" (make-app #'make-eff/k-impl))
-				(list "make-abortive-effect" (make-app #'make-eff-impl))
+				(list "effect" (make-app #'make-eff/k-impl))
+				(list "abortive-effect" (make-app #'make-eff-impl))
 				(list "throw" (make-app #'throw-impl))
 				(list "recover" (make-app #'recover-impl))
 				(list "resume" (make-app #'resume-impl))
@@ -166,6 +167,9 @@
 				; modules
 				(list "export" #'export-impl)
 				(list "import" #'import-impl)
+				; print
+				(list "print" (make-app #'print-impl))
+				(list "newline" (make-app #'newline-impl))
 			))
 		(mapcar (lambda (x)
 			(setf (gethash (make-glyph
