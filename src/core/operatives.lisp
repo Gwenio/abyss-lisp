@@ -32,7 +32,7 @@
 		:bad-tail :bind-params :boole-branch :destructure
 	)
 	(:export :seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
-		:let-impl :let*-impl
+		:let-impl :let*-impl :pcase-impl
 	)
 )
 (in-package :abyss/operatives)
@@ -56,7 +56,7 @@
 
 (declaim (ftype (function ((cons abyss/types::environment t)) t)
 	seq-impl define-impl vau-impl lambda-impl if-impl cond-impl
-	let-impl let*-impl))
+	let-impl let*-impl pcase-impl))
 
 (defun seq-impl (args)
 	(let ((body (cdr args)))
@@ -239,5 +239,70 @@
 			)
 			(t (throw-exn (make-type-exn bindings 'list)))
 		)
+	)
+)
+
+(declaim (ftype (function (abyss/types::environment t t t) (function (t) t))
+	pcase-select pcase-apply))
+
+(declaim (ftype (function (abyss/types::environment t t) t)
+	pcase-aux))
+
+(defun pcase-select (env then x clauses)
+	(lambda (result)
+		(boole-branch result
+			(seq-impl (cons env then))
+			(pcase-aux env x clauses)
+		)
+	)
+)
+
+(defun pcase-apply (env then x clauses)
+	(lambda (pred)
+		(typecase pred
+			(abyss/types::type-id
+				(if (funcall (tid-pred pred) x pred)
+					(seq-impl (cons env then))
+					(pcase-aux env x clauses)
+				)
+			)
+			(abyss/types::applicative
+				(push-frame (pcase-select env then x clauses))
+				(evaluate (list (app-comb pred) x) env)
+			)
+			(abyss/types::boole-type
+				(if (eq +true+ pred)
+					(seq-impl (cons env then))
+					(pcase-aux env x clauses)
+				)
+			)
+			(t
+				(push-frame (pcase-select env then x clauses))
+				(evaluate (list pred x) env)
+			)
+		)
+	)
+)
+
+(defun pcase-aux (env x clauses)
+	(typecase clauses
+		(cons (let ((head (first clauses)))
+			(if (consp head)
+				(progn
+					(push-frame (pcase-apply env (cdr head) x (cdr clauses)))
+					(evaluate (first head) env)
+				)
+				(throw-exn (make-match-cons head))
+			)
+		))
+		(null (normal-pass +inert+))
+		(t (recover-exn (make-improper-list clauses +inert+)))
+	)
+)
+
+(defun pcase-impl (args)
+	(bind-params args (env expr . clauses)
+		(push-frame (lambda (x) (pcase-aux env x clauses)))
+		(evaluate expr env)
 	)
 )

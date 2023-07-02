@@ -10,7 +10,7 @@
 	)
 	(:import-from :abyss/operatives
 		:seq-impl :define-impl :vau-impl :lambda-impl :if-impl :cond-impl
-		:let-impl :let*-impl
+		:let-impl :let*-impl :pcase-impl
 	)
 )
 (in-package :abyss/test/operatives)
@@ -370,6 +370,26 @@
 		(is (= 0
 			(run-oper-case
 				(list #'let*-impl `((,+x+ 0) (,+y+ ,+x+)) +x+)
+				env))
+		)
+	)
+)
+
+(test oper-pcase
+	(let ((env (make-environment nil)))
+		(is (= 0
+			(run-oper-case
+				(list #'pcase-impl () (list +true+ 0))
+				env))
+		)
+		(is (= 0
+			(run-oper-case
+				(list #'pcase-impl () (list +true+ 0) (list +true+ 1))
+				env))
+		)
+		(is (= 1
+			(run-oper-case
+				(list #'pcase-impl () (list +true+ 1) (list +true+ 0))
 				env))
 		)
 	)

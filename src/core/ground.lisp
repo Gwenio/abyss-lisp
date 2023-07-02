@@ -98,6 +98,7 @@
 				(list "lambda" #'lambda-impl)
 				(list "if" #'if-impl)
 				(list "cond" #'cond-impl)
+				(list "?case" #'pcase-impl)
 				(list "let" #'let-impl)
 				(list "let*" #'let*-impl)
 				; applicatives
