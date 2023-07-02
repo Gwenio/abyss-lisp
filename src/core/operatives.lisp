@@ -277,8 +277,8 @@
 				)
 			)
 			(t
-				(push-frame (pcase-select env then x clauses))
-				(evaluate (list pred x) env)
+				(throw-exn (make-type-exn pred
+					(list +tid-type-id+ +tid-applicative+ +tid-boole+)))
 			)
 		)
 	)
