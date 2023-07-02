@@ -192,6 +192,29 @@
 	))
 )
 
+(defun let-loop (bindings)
+	(loop for x on bindings
+		while (consp x)
+		if (glyph-p (first x))
+		collect (first x) into y
+		and collect (first x) into z
+		else unless (consp (first x))
+		do (return (values nil nil (make-match-cons (first x))))
+		else unless (consp (cdr (first x)))
+		do (return (values nil nil (make-match-cons (cdr (first x)))))
+		else unless (null (cddr (first x)))
+		do (return (values nil nil (make-match-null (cddr (first x)))))
+		else
+		collect (first (first x)) into y
+		and collect (second (first x)) into z
+		end
+		finally (return (if x
+			(values nil nil (make-match-null x))
+			(values z y nil)
+		))
+	)
+)
+
 (defun let-impl (args)
 	(bind-params args (parent-env bindings . body)
 		(let ((env (make-environment parent-env)))
@@ -200,25 +223,11 @@
 				(null nil)
 				(t (push-frame (bad-tail body)))
 			)
-			(loop for x on bindings
-				while (consp x)
-				if (glyph-p (first x))
-				collect (first x) into y
-				and collect (first x) into z
-				else unless (consp (first x))
-				do (return (throw-exn (make-match-cons (first x))))
-				else unless (consp (cdr (first x)))
-				do (return (throw-exn (make-match-cons (cdr (first x)))))
-				else unless (null (cddr (first x)))
-				do (return (throw-exn (make-match-null (cddr (first x)))))
-				else
-				collect (first (first x)) into y
-				and collect (second (first x)) into z
-				end
-				finally (return (if x
-					(throw-exn (make-match-null x))
+			(multiple-value-bind (z y x) (let-loop bindings)
+				(if x
+					(throw-exn x)
 					(evaluate (cons (let-aux (env-table env) y) z) parent-env)
-				))
+				)
 			)
 		)
 	)
