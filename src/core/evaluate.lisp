@@ -121,16 +121,17 @@
 			(abyss/types::type-id
 				(if (consp args)
 					(progn
-						(unless (cdr args)
+						(when (cdr args)
 							(push-frame (lambda (x)
 								(recover-exn (make-improper-list (cdr args) x))
 							))
 						)
 						(push-frame (lambda (x)
-							(if (funcall (tid-pred combiner) x combiner)
-								+true+
-								+false+
-							)
+							(normal-pass
+								(if (funcall (tid-pred combiner) x combiner)
+									+true+
+									+false+
+								))
 						))
 						(evaluate (first args) env)
 					)
