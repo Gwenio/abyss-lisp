@@ -128,7 +128,7 @@
 		(:int-bin (parse-integer (remove #\' str) :start 2 :radix 2))
 		(:int-oct (parse-integer (remove #\' str) :start 2 :radix 8))
 		; TODO: escape sequences
-		(:string str)
+		(:string (subseq str 1 (1- (length str))))
 		(t
 			(print (list id str))
 			(error 'unknown-atom :id id :str str)
