@@ -45,6 +45,7 @@
 		(:module "ffi" :components (
 			(:file "enums")
 			(:file "frontend")
+			(:file "library")
 		))
 	)
 	:license "ISC"
