@@ -17,14 +17,10 @@
 
 (uiop:define-package :abyss/handlers
 	(:use :cl)
-	(:mix :abyss/types)
-	(:import-from :abyss/error
-		:make-match-repeat :make-match-param :make-type-exn :make-bad-handler
-	)
-	(:import-from :abyss/context
-		:fresh-context :normal-pass :push-frame :throw-exn :recover-exn
-		:perform-effect :perform-effect/k :continuation-p
-		:resume-cont :resume-cont/h :resume-cont/call :resume-cont/call+h
+	(:mix
+		:abyss/types
+		:abyss/error
+		:abyss/context
 	)
 	(:import-from :abyss/evaluate
 		:evaluate
@@ -37,7 +33,7 @@
 	)
 	(:export :eff-p-impl :cont-p-impl :handler-p-impl
 		:make-eff-impl :make-eff/k-impl :throw-impl :recover-impl
-		:resume-impl :resume/h-impl :resume/call-impl :resume/call+h-impl
+		:set-handler-impl :resume-impl :resume/do-impl
 		:handler-impl :handler/s-impl :with-impl
 		:+tid-continuation+ :+tid-handler+
 	)
@@ -121,19 +117,25 @@
 	)
 )
 
-(defun resume-impl (args)
-	(bind-params args (nil cont x)
+(defun set-handler-impl (args)
+	(bind-params args (nil cont h)
 		(if (continuation-p cont)
-			(resume-cont x cont)
+			(if (handler-p h)
+				(progn
+					(set-handler cont (handler-lookup h))
+					(normal-pass +inert+)
+				)
+				(throw-exn (make-type-exn h +tid-handler+))
+			)
 			(throw-exn (make-type-exn cont +tid-continuation+))
 		)
 	)
 )
 
-(defun resume/h-impl (args)
-	(bind-params args (nil cont handler x)
+(defun resume-impl (args)
+	(bind-params args (nil cont x)
 		(if (continuation-p cont)
-			(resume-cont/h x cont handler)
+			(resume-cont x cont)
 			(throw-exn (make-type-exn cont +tid-continuation+))
 		)
 	)
@@ -145,21 +147,21 @@
 	)
 )
 
-(defun resume/call-impl (args)
-	(bind-params args (env cont . body)
-		(if (continuation-p cont)
-			(resume-cont/call (wrap-seq-aux env body) cont)
-			(throw-exn (make-type-exn cont +tid-continuation+))
-		)
+(defun resume/do-aux (env body cont)
+	(if (continuation-p cont)
+		(resume-cont/call
+			(wrap-seq-aux env body)
+			cont)
+		(throw-exn (make-type-exn cont +tid-continuation+))
 	)
 )
 
-(defun resume/call+h-impl (args)
-	(bind-params args (env cont handler . body)
-		(if (continuation-p cont)
-			(resume-cont/call+h (wrap-seq-aux env body) cont handler)
-			(throw-exn (make-type-exn cont +tid-continuation+))
-		)
+(defun resume/do-impl (args)
+	(bind-params args (env expr . body)
+		(push-frame (lambda (cont)
+			(resume/do-aux env body cont)
+		))
+		(evaluate expr env)
 	)
 )
 

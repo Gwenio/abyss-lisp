@@ -5,7 +5,7 @@
 	(:import-from :abyss/context
 		:fresh-context :initial-context :push-frame :normal-pass
 		:perform-effect :perform-effect/k
-		:resume-cont :resume-cont/h :resume-cont/call
+		:set-handler :resume-cont :resume-cont/call
 	)
 )
 (in-package :abyss/test/continuation)
@@ -54,9 +54,10 @@
 (defun test-handler-shallow (effect)
 	(cond
 		((eq effect +eff-dummy+)
-			#'(lambda (x)
-				(resume-cont/h (/ (car x) 2) (cdr x) #'test-handler-add)
-			)
+			#'(lambda (x) (let ((y (first x)) (k (cdr x)))
+				(set-handler k #'test-handler-add)
+				(resume-cont (/ y 2) k)
+			))
 		)
 		((eq effect +eff-ret+) #'normal-pass)
 		(t nil)

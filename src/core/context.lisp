@@ -22,7 +22,7 @@
 	(:export :shift-context :resume-context :fresh-context :initial-context
 		:error-guard :final-guard :push-frame :normal-pass
 		:perform-effect :perform-effect/k :continuation-p
-		:resume-cont :resume-cont/h :resume-cont/call :resume-cont/call+h
+		:set-handler :resume-cont :resume-cont/call
 		:throw-exn :recover-exn
 	)
 )
@@ -288,6 +288,13 @@
 	)
 )
 
+(declaim (ftype (function (continuation function) t) set-handler))
+; shallow handler support
+(defun set-handler (cont handler)
+	"Sets the handler of a continuation"
+	(setf (cont-handler cont) handler)
+)
+
 (declaim (ftype (function (t continuation) t) resume-cont))
 ; deep handler
 (defun resume-cont (x cont)
@@ -295,24 +302,9 @@
 	(resume-cont-body cont (cont-handler cont) (normal-pass x))
 )
 
-(declaim (ftype (function (t continuation function) t) resume-cont/h))
-; shallow handler support
-(defun resume-cont/h (x cont handler)
-	"Like `resume-cont`, but also sets a new handler."
-	(resume-cont-body cont handler (normal-pass x))
-)
-
 (declaim (ftype (function (function continuation) t) resume-cont/call))
 ; bidirectional effect handling support,
 (defun resume-cont/call (f cont)
 	"Calls `f` at the point `cont` resumes at."
 	(resume-cont-body cont (cont-handler cont) (funcall f))
-)
-
-(declaim (ftype (function (function continuation function) t)
-	resume-cont/call+h))
-; bidirectional + shallow effect handling support
-(defun resume-cont/call+h (f cont handler)
-	"Like `resume-cont/call`, but also sets a new handler."
-	(resume-cont-body cont handler (funcall f))
 )
