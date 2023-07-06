@@ -6,7 +6,7 @@ endif()
 
 project(
 	"Abyss Lisp"
-	VERSION 0.1
+	VERSION 0.1.0
 	LANGUAGES CXX
 )
 
@@ -32,14 +32,19 @@ add_custom_command(
 	COMMAND re2c -W ${CMAKE_CURRENT_SOURCE_DIR}/src/lex/re2c.txt -o ${CMAKE_CURRENT_SOURCE_DIR}/src/lex/re2c.cpp
 	MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/lex/re2c.txt
 )
+add_custom_target(gen-re2c
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/lex/re2c.cpp
+)
 
 add_executable(abyss-lex)
+add_dependencies(abyss-lex gen-re2c)
 target_sources(abyss-lex PRIVATE
 	src/lex/cli.cpp
 	src/lex/re2c.cpp
 )
 
 add_executable(abyss-parse)
+add_dependencies(abyss-parse gen-re2c)
 target_sources(abyss-parse PRIVATE
 	src/parse/cli.cpp
 	src/lex/re2c.cpp
@@ -52,7 +57,18 @@ target_sources(abyss-ffi-enum-gen PRIVATE
 	src/ffi/enum-gen.cpp
 )
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/enums.lisp
+	COMMAND abyss-ffi-enum-gen
+	DEPENDS abyss-ffi-enum-gen
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_target(gen-enums
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/ffi/enums.lisp
+)
+
 add_library(abyss SHARED)
+add_dependencies(abyss gen-re2c gen-enums)
 target_sources(abyss PRIVATE
 	src/ffi/frontend.cpp
 	src/lex/re2c.cpp

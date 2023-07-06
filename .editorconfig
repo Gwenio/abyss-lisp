@@ -58,6 +58,11 @@ charset = utf-8
 indent_style = tab
 indent_size = 4
 
+[meson.build]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+
 [.clang-format]
 charset = utf-8
 indent_style = space
@@ -67,4 +72,9 @@ indent_size = 2
 charset = utf-8
 indent_style = space
 indent_size = 2
+
+[**.abyss]
+charset = utf-8
+indent_style = tab
+indent_size = 4
 

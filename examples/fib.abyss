@@ -1,0 +1,11 @@
+
+; line comment
+
+(define! fib (lambda (n)
+	(if (<? n 2 \inline comment\)
+		n
+		(+ (fib (- n 1)) (fib (- n 2)))
+	)
+))
+
+(fib 37)

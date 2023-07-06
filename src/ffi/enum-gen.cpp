@@ -39,7 +39,7 @@ std::string process_name(std::string_view name)
 		 x = temp.find('_', x)) {
 		temp[x] = '-';
 	}
-	return std::move(temp);
+	return temp;
 }
 
 int main()

@@ -36,6 +36,7 @@
 		(uiop:subpathname *load-pathname* "README.md"))
 	:in-order-to ((test-op (test-op :abyss/test)))
 )
+
 (defsystem :abyss/ffi
 	:name "Abyss Lisp FFI"
 	:serial t
@@ -47,6 +48,52 @@
 			(:file "frontend")
 			(:file "library")
 		))
+	)
+	:license "ISC"
+)
+
+(defsystem :abyss/viewer
+	:name "Abyss Source Viewer"
+	:depends-on (:abyss :abyss/ffi)
+	:description "Utility to see how Abyss recieves code from the FFI."
+	:pathname "src/"
+	:components (
+		(:file "viewer")
+	)
+	; :build-operation program-op
+	:entry-point "abyss/viewer:main"
+	:perform (program-op (o c)
+		(uiop:dump-image (uiop:subpathname
+			(uiop:getenv-pathname "ABYSS_BUILD_PATH" :defaults (uiop:getcwd)
+				:ensure-directory t)
+			(if (uiop:os-windows-p)
+				"abyss-viewer.exe"
+				"abyss-viewer"
+			))
+			:executable t :compression t)
+	)
+	:license "ISC"
+)
+
+(defsystem :abyss/bench
+	:name "Abyss Bench"
+	:depends-on (:abyss :abyss/ffi)
+	:description "Utility to time the evaluation of single file scrips."
+	:pathname "src/"
+	:components (
+		(:file "bench")
+	)
+	; :build-operation program-op
+	:entry-point "abyss/bench:main"
+	:perform (program-op (o c)
+		(uiop:dump-image (uiop:subpathname
+			(uiop:getenv-pathname "ABYSS_BUILD_PATH" :defaults (uiop:getcwd)
+				:ensure-directory t)
+			(if (uiop:os-windows-p)
+				"abyss-bench.exe"
+				"abyss-bench"
+			))
+			:executable t :compression t)
 	)
 	:license "ISC"
 )
@@ -72,6 +119,7 @@
 		(:file "record")
 		(:file "modules")
 	)
+	; :build-operation test-op
 	:perform (test-op (o c)
 		(symbol-call :fiveam :run!
 			(find-symbol* :abyss-tests :abyss/test))
