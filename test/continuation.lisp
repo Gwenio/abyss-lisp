@@ -42,7 +42,7 @@
 	(cond
 		((eq effect +eff-dummy+)
 			(lambda (x)
-				(resume-cont (cdr x) (cdr x))
+				(funcall (first x) (cdr x))
 			)
 		)
 		((eq effect +eff-exn+) #'normal-pass)
@@ -97,16 +97,56 @@
 )
 
 (test cont-invalidate
+	; invalidate on resume
 	(run-cont-case
 		(fresh-context
 			(lambda ()
 				(push-frame #'(lambda (x) (resume-cont t x)))
 				(is (exn-type-p
-					(perform-effect/k nil +eff-dummy+)
+					(perform-effect/k
+						(lambda (k)
+							(resume-cont k k)
+						) +eff-dummy+)
 					+tid-bad-cont+)
 				)
 			)
 			#'test-handler-bad)
+	)
+	; invalidate on exiting the context
+	(run-cont-case
+		(push-frame #'(lambda (x) (resume-cont t x)))
+		(fresh-context
+			(lambda ()
+				(is (exn-type-p
+					(perform-effect/k
+						(lambda (k)
+							(normal-pass k)
+						) +eff-dummy+)
+					+tid-bad-cont+)
+				)
+			)
+			#'test-handler-bad)
+	)
+	(let ((called nil))
+		; check invalidation does not screw up guards added after it
+		(run-cont-case
+			(fresh-context
+				(lambda ()
+					(push-frame #'(lambda (x)
+						(resume-cont t x)
+					))
+					(perform-effect/k
+						(lambda (k)
+							(abyss/context:final-guard (lambda (y)
+								(setf called t)
+								(normal-pass y)
+							))
+							(resume-cont k k)
+						) +eff-dummy+)
+				)
+				#'test-handler-bad)
+		)
+		(is (eq called t))
 	)
 )
 
