@@ -1,0 +1,158 @@
+
+; non-resumable exceptions
+(print (with
+	(handler k
+		(exn err \the continuation `k` is undefined\ err)
+	)
+	(throw "Error")
+))
+
+; resumable exceptions
+(print (with
+	(handler k
+		(fix err (resume k "Recovered"))
+	)
+	(recover "Error")
+))
+
+; handlers are first class objects
+(define! catch-all-exn (handler k
+	(exn err err)
+))
+
+; unhandled resumable exceptions will retry as non-resumable
+(print (with catch-all-exn
+	(recover "Error")
+))
+
+; you can force non resumable handling to be more local as follows
+(print (with
+	(handler k
+		(exn err "Outer")
+		; `resume/do` runs the trailing expressions after resuming
+		; the continuation
+		; they are evaluated in the environment resume/do was called in
+		; the reason to do so is to change what handlers are present
+		(fix err (resume/do k (throw err)))
+	)
+	(with
+		(handler k
+			(exn err "Inner")
+		)
+		(recover "Error")
+	)
+))
+
+; continuations may be resumed at most once
+(print (with catch-all-exn
+	(let (((eff perform) (effect "eff")))
+		(with
+			(handler k
+				(eff x
+					(resume k x)
+					(resume k x) ; will error
+				)
+			)
+			(perform "Haha")
+		)
+	)
+))
+
+; continuations are invalidated when the `with` returns
+; this in particular is subject to change
+(print (with catch-all-exn
+	(let (((eff perform) (effect "eff")))
+		(resume (with
+			(handler k (eff _ k))
+			(perform "Haha")
+		) "Hello")
+	)
+))
+; unwinding is triggered when `with` returns
+; invalidating an unresumed continuation is the first thing that happens
+
+; `guard` is used to have stuff happen in the event of abnormal unwinding
+(print (with catch-all-exn
+	(guard ((print "Unwind"))
+		(throw "Error"))
+))
+
+(print (with catch-all-exn
+	(guard ((print "Unwind"))
+		"Hello")
+))
+
+; `always` is like `guard`, but triggers for normal returns as well
+(print (with catch-all-exn
+	(always ((print "Unwind"))
+		(throw "Error"))
+))
+
+(print (with catch-all-exn
+	(always ((print "Unwind"))
+		"Hello")
+))
+
+; defining effects
+(define! (load get) (effect "load"))
+; load is the effect, get is an applicative to preform the effect
+(define! (save set) (effect "save"))
+
+; to have an effect that does not receive a continuation, like `exn`,
+; use `(abortive-effect name)` instead of `(effect name)`
+
+; `handler/state` is like `handler`, but makes stateful handlers
+(define! stateful (handler/state k (count)
+	; `ret` handles normal returns from handled code
+	(ret x \as with exn, k is undefined\ (* x count))
+	(load () ((resume k count) \pass count to next handler\ count))
+	(save x ((resume k #inert) x))
+))
+
+; the the expression following the handler in the `with`
+; will be used to initialize the state
+(print (with stateful (3) ; initial state
+	(set (+ (get ()) 4))
+	(- (get ()) 1)
+))
+
+; the above is equivalent to
+;
+; (define! (ret return) (abortive-effect "ret"))
+; (define! (init initialize) (effect "init"))
+; (define! stateful (handler k
+;	; you could use normal ret, the point being made is it is not special
+; 	(ret x (lambda (count) (* x count)))
+; 	(load () (lambda (count) ((resume k count) count)))
+; 	(save x (lambda (_count) ((resume k #inert) x)))
+; 	(init (count) ((resume k #inert) count))
+; ))
+; (print (with stateful
+; 	(initialize (list 3))
+; 	(return (do
+; 		(set (+ (get ()) 4))
+; 		(- (get ()) 1)
+; 	))
+; ))
+
+; you can replace a handler with `handler!`
+; here stateful is emulated using it
+; `handler!` is pretty niche and making a good example for it is hard
+(define! shallow (lambda (count)
+	(handler k
+		(ret x (* x count))
+		(load () (resume k count))
+		(save x
+			(handler! k (shallow x))
+			(resume k #inert)
+			; without `handler!`, this would be
+			; (with (shallow x) (resume k #inert))
+			; which would have increasing number of handlers build up
+		)
+	)
+))
+
+(print (with (shallow 3)
+	(set (+ (get ()) 4))
+	(- (get ()) 1)
+))
