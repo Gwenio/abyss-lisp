@@ -116,6 +116,8 @@
 				(list "handler!" (make-app #'set-handler-impl))
 				(list "resume" (make-app #'resume-impl))
 				(list "resume/do" #'resume/do-impl)
+				(list "always" #'always-impl)
+				(list "guard" #'guard-impl)
 				(list "handler" #'handler-impl)
 				(list "handler/state" #'handler/s-impl)
 				(list "with" #'with-impl)

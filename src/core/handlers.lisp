@@ -36,6 +36,8 @@
 		:set-handler-impl :resume-impl :resume/do-impl
 		:handler-impl :handler/s-impl :with-impl
 		:+tid-continuation+ :+tid-handler+
+		:always-impl
+		:guard-impl
 	)
 )
 (in-package :abyss/handlers)
@@ -163,6 +165,27 @@
 		))
 		(evaluate expr env)
 	)
+)
+
+(defmacro guard-body (args push-guard)
+	`(bind-params ,args (env guard . body)
+		(,push-guard (lambda (x)
+			(push-frame (lambda (_)
+				(declare (ignore _))
+				(normal-pass x)
+			))
+			(seq-impl (cons env guard)
+		)))
+		(seq-impl (cons env body))
+	)
+)
+
+(defun always-impl (args)
+	(guard-body args final-guard)
+)
+
+(defun guard-impl (args)
+	(guard-body args error-guard)
 )
 
 (defun handler-lookup-aux (table)
