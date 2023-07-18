@@ -16,7 +16,7 @@
 ))
 
 ; handlers are first class objects
-(define! catch-all-exn (handler k
+(let! catch-all-exn (handler k
 	(exn err err)
 ))
 
@@ -94,15 +94,15 @@
 ))
 
 ; defining effects
-(define! (load get) (effect "load"))
+(let! (load get) (effect "load"))
 ; load is the effect, get is an applicative to preform the effect
-(define! (save set) (effect "save"))
+(let! (save set) (effect "save"))
 
 ; to have an effect that does not receive a continuation, like `exn`,
 ; use `(abortive-effect name)` instead of `(effect name)`
 
 ; `handler/state` is like `handler`, but makes stateful handlers
-(define! stateful (handler/state k (count)
+(let! stateful (handler/state k (count)
 	; `ret` handles normal returns from handled code
 	(ret x \as with exn, k is undefined\ (* x count))
 	(load () ((resume k count) \pass count to next handler\ count))
@@ -118,9 +118,9 @@
 
 ; the above is equivalent to
 ;
-; (define! (ret return) (abortive-effect "ret"))
-; (define! (init initialize) (effect "init"))
-; (define! stateful (handler k
+; (let! (ret return) (abortive-effect "ret"))
+; (let! (init initialize) (effect "init"))
+; (let! stateful (handler k
 ;	; you could use normal ret, the point being made is it is not special
 ; 	(ret x (lambda (count) (* x count)))
 ; 	(load () (lambda (count) ((resume k count) count)))
@@ -138,7 +138,7 @@
 ; you can replace a handler with `handler!`
 ; here stateful is emulated using it
 ; `handler!` is pretty niche and making a good example for it is hard
-(define! shallow (lambda (count)
+(let! shallow (lambda (count)
 	(handler k
 		(ret x (* x count))
 		(load () (resume k count))
