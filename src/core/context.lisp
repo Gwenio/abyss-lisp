@@ -66,11 +66,10 @@
 (defun unwind-guards (x)
 	"Unwinds guards until `stop` is reached."
 	(let ((guard (pop (ctx-guards *current-ctx*))))
-		(declare (type (or function null) guard))
 		(if guard
 			(progn
 				(push-frame #'unwind-guards)
-				(funcall guard x)
+				(funcall (the function guard) x)
 			)
 			(next-context x)
 		)
@@ -87,7 +86,7 @@
 
 (defun discard-context (child)
 	"Discards a child context, unwinds all guards."
-	#'(lambda (x)
+	(lambda (x)
 		(if (ctx-guards child)
 			(progn
 				; Set handler for unwinding. The setup for handling effects
@@ -115,8 +114,7 @@
 		)
 		(setf *current-ctx* next)
 		(let ((ret-fn (funcall handler +eff-ret+)))
-			(declare (type function ret-fn))
-			(funcall ret-fn x)
+			(funcall (the function ret-fn) x)
 		)
 	)
 )
@@ -181,14 +179,6 @@
 	(normal-pass x)
 )
 
-(defun call-guard (x)
-	"Pops the next guard on a context and calls it."
-	(let ((guard (pop (ctx-guards *current-ctx*))))
-		(declare (type function guard))
-		(funcall guard x)
-	)
-)
-
 (declaim (ftype (function (function) t) error-guard final-guard push-frame))
 
 (defun error-guard (guard)
@@ -199,8 +189,11 @@
 
 (defun final-guard (guard)
 	"Push a guard that always runs."
-	(push guard (ctx-guards *current-ctx*))
-	(push-frame #'call-guard)
+	(let ((ctx *current-ctx*))
+		(push guard (ctx-guards ctx))
+		(push guard (ctx-frames ctx))
+		(push #'pop-guard (ctx-frames ctx))
+	)
 )
 
 (defun push-frame (fun)
@@ -211,8 +204,7 @@
 (defun normal-pass (x)
 	"Pops and calls the closure of the top of the frames stack."
 	(let ((f (pop (ctx-frames *current-ctx*))))
-		(declare (type function f))
-		(funcall f x)
+		(funcall (the function f) x)
 	)
 )
 
@@ -236,7 +228,7 @@
 
 (defun invalidate-cont (cont)
 	"Used as a guard to invalidate a continuation."
-	#'(lambda (x)
+	(lambda (x)
 		(setf (cont-ctx cont) nil)
 		(normal-pass x)
 	)
