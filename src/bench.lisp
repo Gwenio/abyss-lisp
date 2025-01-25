@@ -54,13 +54,15 @@
 	(cond
 		((eq eff +eff-ret+) #'identity)
 		((eq eff +eff-exn+) (lambda (x)
+			(write-line "Unhandled exception")
 			(abyss-print x)
-			(error "Unhandled exception")
+			(uiop:quit 1)
 		))
 		((eq eff +eff-fix+) #'fix-handler)
 		(t
+			(write-line "Unexpected effect")
 			(abyss-print eff)
-			(error "Unexpected effect")
+			(uiop:quit 1)
 		)
 	)
 )

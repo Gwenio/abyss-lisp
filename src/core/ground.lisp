@@ -93,7 +93,7 @@
 				(list "type-of" (make-app #'type-of-impl))
 				; operatives
 				(list "do" #'seq-impl)
-				(list "define!" #'define-impl)
+				(list "let!" #'define-impl)
 				(list "vau" #'vau-impl)
 				(list "lambda" #'lambda-impl)
 				(list "if" #'if-impl)

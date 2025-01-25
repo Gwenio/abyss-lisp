@@ -52,7 +52,7 @@
 		(is (= (gethash foo x)) 7)
 		(setf y (run-mod-case (list (cons foo x))
 			(list
-				(list (make-glyph "define!") (list foo)
+				(list (make-glyph "let!") (list foo)
 					(list (make-glyph "import") foo foo))
 				(list (make-glyph "export") (list bar
 					(list (make-glyph "*") 6 foo))))

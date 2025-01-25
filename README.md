@@ -1,5 +1,56 @@
 # Abyss Lisp
 
+## Notice
+
+I am calling Abyss Lisp done.
+Kind of late considering how long it has been since the last update.
+There will be a few pushes where I publish some stuff I have but did not commit.
+
+The reason is I had determined that first class macros to be lacking for what I had hoped.
+The goal was to use them to construct DSLs that generate compilable code.
+Without needing to create an alternative "evaluation" function.
+
+Two additional features would be needed at a minimum.
+
+First is operatives would need to receive the source expression that evaluated to the operative.
+So for an operative `f` being called as `(f x)` would receive `(f x)` as arguments instead of `(x)`.
+Annoying to implement but is palpable.
+
+Second is to allow the equivalent of Common Lisp "symbol macros".
+This is possible to implement, but causes problems.
+It would mean operatives cannot be passed as parameters normally.
+When a symbol evaluates to an operative and it is going to be passed it would be expanded.
+So a special built in would be needed to get the operative from the environment without this step.
+
+So it can be achieved, but at a cost.
+The costs being increased complexity and the language being less "smooth".
+The former makes the language's weakness of performance worse.
+The latter harms the language's strength.
+
+I have thoughts still for a Lisp dialect, but it would be a major departure from Abyss.
+Therefore, I feel any such work should be a new project even if it is a fork of Abyss.
+
+The first class macros and environments of a Kernel like language are a good experience to have.
+
+As a parting note, there is an idea that I explored but never committed.
+I mention it now in case anyone viewing Abyss in the future has the same hypothesis.
+
+The idea is to manage environments through effects rather than objects bound to variables.
+What this would be aiming for is to allow multithreading to be practical.
+
+It almost works. But it unfortunately does not.
+
+Managing environments this way would mean they cannot be modified once their dynamic scope exits.
+If they are read only, then we do not need a lock to access them in the presence of multithreading.
+The issue is environments captured by a combiner (function / macro) can be shared while in use.
+
+So locking would still sometimes need to be used.
+It would still make the situation much better.
+
+However, there would be trade offs.
+It means a decrease in expressive power.
+And effects without compiler optimizations have a performance cost of their own.
+
 ## Description
 
 A prototype of a Lisp dialect.
