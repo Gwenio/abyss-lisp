@@ -1,0 +1,285 @@
+
+; Simply Typed Lambda Calculus (STLC) type checking
+
+; Union-Find data structure and helper functions
+
+(define! (uf-node? uf-node uf-scope)
+	; us-node record type
+	(let (((uf-node uf-node?) (record-subtype uf-node (id parent rank))))
+		; using environment bindings for mutable state is ugly, see below
+		;
+		; (define! current-id 1)
+		; (define! get-id (let ((env (current-env))
+		; 	(lambda () (let ((x current-id))
+		; 		(eval (list define! ((unwrap . list) current-id) (+ x 1)) env)
+		; 		x
+		; 	))
+		; )))
+		;
+		; next up is the same but with a record
+		;
+		; (define! get-id (let ((current (record id 1)))
+		; 	(lambda () (let ((x (current . id)))
+		; 		(record! current id (+ x 1))
+		; 		x
+		; 	))
+		; ))
+		;
+		; but lets use effects to show fancy features
+
+		; effect type and applicative to preform the effect
+		(define! (uf-id get-id) (effect "uf-id"))
+
+		; effect handler, keeps a count for id values
+		; incremented each time
+		(define! uf-handler (handler/state k (count)
+			(uf-id () (let ((n (+ count 1)))
+				((resume k n) n)
+			))
+		))
+		(list uf-node?
+			; we want to always construct us-node objects with a new id
+			(lambda () (uf-node (get-id ()) #ignore 0))
+			; uf-scope is a helper to set up the handler for get-id
+			(vau body env
+				(eval (list with uf-handler (list 1) . body) env)
+			))
+	)
+)
+
+; searches the node's parents till the root is found
+; compresses the list by setting parent to root
+; to speed up future searches
+(define! uf-find (lambda (start)
+	(if (uf-node? start)
+		(let ((next (start . parent)))
+			(?case next
+				(uf-node?
+					(define! loop (lambda (current next)
+						(?case next
+							(uf-node?
+								(loop next (next . parent))
+							)
+							(ignore?
+								(record! start parent current)
+								current
+							)
+							(#true
+								(record! start parent next)
+								next
+							)
+						)
+					))
+					(loop next (next . parent))
+				)
+				(ignore? start)
+				(#true next)
+			)
+		)
+		start
+	)
+))
+
+; expects to uf-node records that are not the same record
+(define! uf-union (lambda (left right)
+	(let ((lrank (left . rank)) (rrank (right . rank)))
+		(if (< lrank rrank)
+			(record! left parent right)
+			(do
+				(record! left rank (max rrank (+ lrank 1)))
+				(record! right parent left)
+			)
+		)
+	)
+))
+
+; helper that sets the parent of node to root
+(define! uf-root! (lambda (node root)
+	(record! node parent root)
+))
+
+(define! (arrow arrow?) (record-subtype arrow (in out)))
+
+(define! (unify-fail unify-fail?) (record-subtype unify-fail (left right)))
+
+(define! unify (lambda (t0 t1)
+	(let ((left (uf-find t0)) (right (uf-find t1)))
+		(cond
+			((is? left right) #inert)
+			; left and right have same type
+			(((type-of left) right)
+				(?case left
+					(uf-node?
+						(uf-union left right)
+					)
+					(arrow?
+						(unify (left . in) (right . in))
+						(unify (left . out) (right . out))
+					)
+					; if type-ids are not the same, fail
+					(type-id?
+						(throw (unify-fail left right))
+					)
+					; otherwise succeed
+					(#true #inert)
+				)
+			)
+			((uf-node? left) (uf-root! left right))
+			((uf-node? right) (uf-root! right left))
+			(#true (throw (unify-fail left right)))
+		)
+	)
+))
+
+(define! (lam lam?) (record-subtype lam (bind body)))
+(define! (app app?) (record-subtype app (fun arg)))
+(define! (lit lit?) (record-subtype lit (value)))
+(define! (var var?) (record-subtype var (name)))
+
+; error type for when a variable lookup fails
+(define! (lookup-fail lookup-fail?)
+	(record-subtype lookup-fail (key)))
+
+; lookup variable binding in a binding environment
+(define! lookup (lambda (find (key . value) . tail)
+	(if (is? key find)
+		value
+		(if (null? tail)
+			(throw (lookup-fail find))
+			(lookup find tail)
+		)
+	)
+))
+
+; type inference failure error type
+(define! (infer-fail infer-fail?)
+	(record-subtype infer-fail (context expr)))
+
+(define! infer (lambda (ctx expr)
+	(?case expr
+		(var?
+			(define! type (lookup (expr . name) . ctx))
+		)
+		(lam?
+			(define! (bind body) (expr bind body))
+			(define! t0 (uf-node))
+			(define! t1 (infer (cons (cons bind t0) ctx) body))
+			(define! type (arrow t0 t1))
+		)
+		(app?
+			(define! (fun arg) (expr fun arg))
+			(define! type (uf-node))
+			(check ctx fun
+				(arrow (infer ctx arg) type))
+		)
+		(lit?
+			(define! type (type-of (expr . value)))
+		)
+		(#true
+			(print (type-of expr))
+			(throw (infer-fail ctx expr))
+		)
+	)
+	(record! expr type type)
+	type
+))
+
+(define! check (lambda (ctx expr type)
+	(unify type (infer ctx expr))
+	type
+))
+
+; helper to allow writing 'code' to type check
+;
+; it was in the process of devising a way to implement
+; this that I realized first class macros / operatives
+; would not be capable of what I hoped to use them for
+(define! desugar (let ()
+	(define! l ((unwrap list) . lambda))
+	(define! desugar-list (lambda ((x . y))
+		(?case y
+			(null? (desugar x))
+			(cons?
+				(app (desugar x) (desugar-list y))
+			)
+			(#true (throw (type-exn y list?)))
+		)
+	))
+	(define! desugar (lambda (body)
+		(?case body
+			(cons?
+				(if (is? (first body) l)
+					(let (((_ x y) body))
+						(if (symbol? x)
+							(lam x (desugar y))
+							(throw (type-exn x symbol?))
+						)
+					)
+					; (let (((x . y) body))
+					; 	(app (desugar x) (desugar-list y))
+					; )
+					(desugar-list body)
+				)
+			)
+			(symbol? (var body))
+			(#true (lit body))
+		)
+	))
+	(unwrap desugar)
+))
+
+(define! (unresolved unresolved?) (record-subtype unresolved (type)))
+
+; helper to tidy up the result of type checking for output
+(define! tidy-type (lambda (type)
+	(?case type
+		(uf-node?
+			(define! found (tidy-type (uf-find type)))
+			(if (is? type found)
+				(throw (unresolved type))
+				found
+			)
+		)
+		(arrow? (arrow
+			(tidy-type (type . in))
+			(tidy-type (type . out))
+		))
+		(#true type)
+	)
+))
+
+(define! tidy-expr! (lambda (expr)
+	(record! expr type (tidy-type (expr . type)))
+	(?case expr
+		(lam?
+			(tidy-expr! (expr . body))
+		)
+		(app?
+			(tidy-expr! (expr . fun))
+			(tidy-expr! (expr . arg))
+		)
+		(var? #inert)
+		(lit? #inert)
+		(#true
+			(print (type-of expr))
+			(throw (infer-fail ctx expr))
+		)
+	)
+))
+
+; helper to print stuff
+(define! type-check (lambda (ctx expr)
+	(print "Infer:")
+	(print expr)
+	(uf-scope (infer ctx expr))
+	(tidy-expr! expr)
+	(print "Result:")
+	(print expr)
+	(newline)
+))
+
+(type-check () (desugar 0))
+
+(type-check () (desugar
+	((lambda x x) 0)
+))
